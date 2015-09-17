@@ -2,17 +2,17 @@
 <html ng-app="recoveryApp">
     <head>
         <meta charset="utf-8">
-        <script type="text/javascript" src="../bower_components/angular/angular.js"></script>
-        <script type="text/javascript" src="../bower_components/sjcl/sjcl.js"></script>
-        <script type="text/javascript" src="../bower_components/bitcore/bitcore.min.js"></script>
-        <script type="text/javascript" src="../bower_components/bitcore/bitcore.js"></script>
-        <script type="text/javascript" src="../bower_components/jquery/dist/jquery.js"></script>
-        <script type="text/javascript" src="../bower_components/ng-lodash/build/ng-lodash.min.js"></script>
-        <script type="text/javascript" src="../bower_components/angular-fileupload/angular-filereader.js"></script>
-        <script type="text/javascript" src="../bower_components/angular-local-storage/dist/angular-local-storage.js"></script>
+        <script type="text/javascript" src="bower_components/angular/angular.js"></script>
+        <script type="text/javascript" src="bower_components/sjcl/sjcl.js"></script>
+        <script type="text/javascript" src="bower_components/bitcore/bitcore.min.js"></script>
+        <script type="text/javascript" src="bower_components/bitcore/bitcore.js"></script>
+        <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
+        <script type="text/javascript" src="bower_components/ng-lodash/build/ng-lodash.min.js"></script>
+        <script type="text/javascript" src="bower_components/angular-fileupload/angular-filereader.js"></script>
+        <script type="text/javascript" src="bower_components/angular-local-storage/dist/angular-local-storage.js"></script>
         <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="../js/services.js"></script>
-        <script type="text/javascript" src="../js/controllers.js"></script>
+        <script type="text/javascript" src="js/services.js"></script>
+        <script type="text/javascript" src="js/controllers.js"></script>
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
         <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
         <title>Copay recovery tool</title>
@@ -112,7 +112,7 @@
                                 </div>
                                 <div class="form-goup" id="passwordX2" style="display: none">
                                     <br>
-                                    <input type="password" class="form-control" ng-model="passX[2]" placeholder="Encrypted private key">
+                                    <input type="password" class="form-control" ng-model="passX[2]" id="passX2" placeholder="Encrypted private key">
                                 </div><hr>
                             </div>
 
@@ -133,7 +133,7 @@
                                 </div>
                                 <div class="form-goup" id="passwordX3" style="display: none">
                                     <br>
-                                    <input type="password" class="form-control" ng-model="passX[3]" placeholder="Encrypted private key">
+                                    <input type="password" class="form-control" ng-model="passX[3]" id="passX3" placeholder="Encrypted private key">
                                 </div><hr>
                             </div>
 
@@ -155,7 +155,7 @@
                                 </div>
                                 <div class="form-goup" id="passwordX4" style="display: none">
                                     <br>
-                                    <input type="password" class="form-control" ng-model="passX[4]" placeholder="Encrypted private key">
+                                    <input type="password" class="form-control" ng-model="passX[4]" id="passX4" placeholder="Encrypted private key">
                                 </div><hr>
                             </div>
 
@@ -177,7 +177,7 @@
                                 </div>
                                 <div class="form-goup" id="passwordX5" style="display: none">
                                     <br>
-                                    <input type="password" class="form-control" ng-model="passX[5]" placeholder="Encrypted private key">
+                                    <input type="password" class="form-control" ng-model="passX[5]" id="passX5" placeholder="Encrypted private key">
                                 </div><hr>
                             </div>
 
@@ -199,7 +199,7 @@
                                 </div>
                                 <div class="form-goup" id="passwordX6">
                                     <br>
-                                    <input type="password" class="form-control" ng-model="passX[6]" placeholder="Encrypted private key">
+                                    <input type="password" class="form-control" ng-model="passX[6]" id="passX6" placeholder="Encrypted private key">
                                 </div>
                             </div>
                         </div>
