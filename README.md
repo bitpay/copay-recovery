@@ -9,7 +9,7 @@ Install [bower](http://bower.io) if you haven't already:
     npm install -g bower
 
 Build copay-recovery
-
+ 
     bower install
 
 ## About copay-recovery
