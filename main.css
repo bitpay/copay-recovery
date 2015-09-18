@@ -1,0 +1,29 @@
+.page-header {
+    background-size: 100%;
+    margin-top: 0;
+    padding: 2em 0em 2em 0em;
+    background: #2C3E50;
+}
+html,
+body {
+	margin:0;
+	padding:0;
+	height:100%;
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif
+}
+label{
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+}
+.page-footer {
+    padding: 1em 0em 1em 0em;
+    background: #F4F6F9;
+    width:100%;
+	height:3em;
+	bottom:0;
+	left:0;
+    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+}
+#wrapper {
+	min-height:100%;
+	position:relative;
+}

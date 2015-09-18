@@ -45,7 +45,7 @@ app.service('recoveryServices',['$http', 'lodash',function($http, lodash){
                 		return result;
                 	}
                 }
-
+                
                 if ((JSON.parse(decryptData).m != m) || (JSON.parse(decryptData).n != n)){
                     result = "The wallet types (m-n) was not matched with values provided.";
                     console.log('Data input m-n: ' + m + '-' + n);
