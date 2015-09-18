@@ -1,225 +1,233 @@
 <!DOCTYPE html>
-<html ng-app="recoveryApp">
-    <head>
-        <meta charset="utf-8">
-        <script type="text/javascript" src="bower_components/angular/angular.js"></script>
-        <script type="text/javascript" src="bower_components/sjcl/sjcl.js"></script>
-        <script type="text/javascript" src="bower_components/bitcore/bitcore.min.js"></script>
-        <script type="text/javascript" src="bower_components/bitcore/bitcore.js"></script>
-        <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
-        <script type="text/javascript" src="bower_components/ng-lodash/build/ng-lodash.min.js"></script>
-        <script type="text/javascript" src="bower_components/angular-local-storage/dist/angular-local-storage.js"></script>
-        <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
-        <script type="text/javascript" src="js/services.js"></script>
-        <script type="text/javascript" src="js/controllers.js"></script>
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
-        <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
-        <title>Copay recovery tool</title>
-    </head>
-    <body ng-controller="recoveryController">
-        <div align="center">
-            <h2>Copay recovery tool</h2>
+<html ng-app="recoveryApp" lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <script type="text/javascript" src="bower_components/angular/angular.js"></script>
+    <script type="text/javascript" src="bower_components/sjcl/sjcl.js"></script>
+    <script type="text/javascript" src="bower_components/bitcore/bitcore.min.js"></script>
+    <script type="text/javascript" src="bower_components/bitcore/bitcore.js"></script>
+    <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
+    <script type="text/javascript" src="bower_components/ng-lodash/build/ng-lodash.min.js"></script>
+    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
+    <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="main.css"></link>
+    <script type="text/javascript" src="js/services.js"></script>
+    <script type="text/javascript" src="js/controllers.js"></script>
+    <title>Address Generator</title>
+</head>
+<div id="wrapper">
+    <header class="page-header">    
+        <div class="container">
+            <h1 style="color:white;">Copay recovery tool<br><small>Use your backups and passwords to recover your BTC</small></h1>
         </div>
-        <div class="row">
-            <div class="col-xs-5">
-                <p class="alert alert" style="color: white">
-                    .</p>
-            </div>
-            <div class="col-xs-6">
-                <strong><p id="errorMessage" class="alert alert-danger" style="display: none">
-                    {{errorMessage}}</p></strong>
-                <strong><p id="successMessage" class="alert alert-success" style="display: none">
-                    {{successMessage}}</p></strong>
-                <strong><p id="statusMessage" class="alert alert-info" style="display: none">
-                    {{statusMessage}}</p></strong>
-            </div>
-        </div>
-        <div class="row">
-            <div class="col-lg-3 col-lg-offset-1">
-                <form>
+    </header>
+    <body ng-controller="recoveryController" style="background-color:#F4F6F9">
+        <div class="container">        
+            <form>
+                <label>Select total number of copayers:</label>
+                <select class="form-group" id="selectM">
+                    <option id="1">1</option>
+                    <option id="2">2</option>
+                    <option id="3">3</option>
+                    <option id="4">4</option>
+                    <option id="5">5</option>
+                    <option id="6">6</option>
+                </select><br>
+                <label>Select require number of signatures:</label>
+                <select class="form-group" id="selectN">
+                    <option id="1">1</option>
+                    <option id="2">2</option>
+                    <option id="3">3</option>
+                    <option id="4">4</option>
+                    <option id="5">5</option>
+                    <option id="6">6</option>
+                </select>
+                <div class="row">
+                    <div class="col-md-5">
+                        <div id="button2" style="display: none;">
+                            <form class="form-inline">
+                                <div class="form-group">
+                                    <label for="addr">Insert destination address (the total amount will be send there):</label>
+                                    <div class="input-group">
+                                        <div class="input-group-addon">Destination Address :</div>
+                                        <input type="text" class="form-control" ng-model="addr">
+                                    </div>
+                                    <span id="helpBlock" class="help-block">{{totalBalance}}</span>
+                                </div>
+                            </form>
+                            <div class="form-group">
+                                <button class="btn btn-primary" ng-click="send()">Transfer Amount</button>
+                            </div>
+                        </div>
+                       <!--  <div id="secondMessages" style="display: none;">
+                            <div id="messageSuccess" class="alert alert-success" style="display: none;">
+                                {{messageSuccess}}
+                            </div>
+                            <div id="messageError" class="alert alert-danger" style="display: none;">
+                                {{messageError}}
+                            </div>
+                            <div id="statusMessage" class="alert alert-info" style="display: none;">
+                                {{statusMessage}}
+                            </div>
+                        </div> -->
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="form-group" id="block1">
+                            <label>Backup 1:</label>
+                            <input class="checkFile" type="checkbox" style="margin-left: 85px" id="checkFile1"> Load backup file<br>
+                            <div class="form-group" id="backup1">
+                                <input type="text" class="form-control" ng-model="backUp[1]" placeholder="Wallet JSON backup">
+                            </div>
+                            <div class="form-group" id="backupFile1" style="display: none">
+                                <input type="file" ng-model="file1" on-read-file="showContent($fileContent, 1)" accept="application/json, .txt">
+                            </div>
+                            <div class="form-group" id="password1">
+                                <label>Password:</label>
+                                <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass1"> Encrypted private key
+                                <input type="password" class="form-control" ng-model="pass1" placeholder="Backup password">
+                            </div>
+                            <div class="form-goup" id="passwordX1" style="display: none">
+                                <br>
+                                <input type="password" class="form-control" ng-model="passX[1]" id="passX1" placeholder="Encrypted private key password">
+                            </div><hr>
+                        </div>
 
-                    <ul class="nav nav-tabs">
-                        <li class="active">
-                            <a data-toggle="tab" href="#walletType">Wallet type</a>
-                        </li>
-                        <li>
-                            <a data-toggle="tab" href="#dataInput">Data input</a>
-                        </li>
-                    </ul>
-
-                    <div class="tab-content">
-                        <div id="walletType" class="tab-pane fade in active">
+                        <div id="block2" style="display: none">
+                            <label>Backup 2:</label>
+                            <input class="checkFile" type="checkbox" style="margin-left: 85px" id="checkFile2"> Load backup file
                             <br>
-                            <label>Required signatures:</label>
-                            <select class="form-group" id="selectM">
-                                <option id="1">1</option>
-                                <option id="2">2</option>
-                                <option id="3">3</option>
-                                <option id="4">4</option>
-                                <option id="5">5</option>
-                                <option id="6">6</option>
-                            </select><br>
-
-                            <label>Number of copayers:</label>
-                            <select class="form-group" id="selectN">
-                                <option id="1">1</option>
-                                <option id="2">2</option>
-                                <option id="3">3</option>
-                                <option id="4">4</option>
-                                <option id="5">5</option>
-                                <option id="6">6</option>
-                            </select><br>
+                            <div class="form-group" id="backup2">
+                                <input type="text" class="form-control" ng-model="backUp[2]" placeholder="Wallet JSON backup">
+                            </div>
+                            <div class="form-group" id="backupFile2" style="display: none">
+                                <input type="file" ng-model="file2" on-read-file="showContent($fileContent, 2)" accept="application/json, .txt">
+                            </div>
+                            <div class="form-group" id="password2">
+                                <label>Password:</label>
+                                <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass2"> Encrypted private key
+                                <input type="password" class="form-control" ng-model="pass2" placeholder="Backup password">
+                            </div>
+                            <div class="form-goup" id="passwordX2" style="display: none">
+                                <br>
+                                <input type="password" class="form-control" ng-model="passX[2]" id="passX2" placeholder="Encrypted private key password">
+                            </div><hr>
                         </div>
 
-                        <div id="dataInput" class="tab-pane fade">
-                            <div id="block1">
-                                <br>
-                                <label>Backup 1:</label>
-                                <input class="checkFile" type="checkbox" style="margin-left: 85px" id="checkFile1"> Load backup file
-                                <br>
-                                <div class="form-group" id="backup1">
-                                    <input type="text" class="form-control" ng-model="backUp[1]">
-                                </div>
-                                <div class="form-group" id="backupFile1" style="display: none">
-                                    <input type="file" ng-model="file1" on-read-file="showContent($fileContent, 1)" accept="application/json, .txt">
-                                </div>
-                                <div class="form-group" id="password1">
-                                    <label>Password:</label>
-                                    <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass1"> Encrypted private key
-                                    <input type="password" class="form-control" ng-model="pass1" placeholder="Password">
-                                </div>
-                                <div class="form-goup" id="passwordX1" style="display: none">
-                                    <br>
-                                    <input type="password" class="form-control" ng-model="passX[1]" id="passX1" placeholder="Encrypted private key">
-                                </div><hr>
+                        <div id="block3" style="display: none">
+                            <label>Backup 3:</label>
+                            <input class="checkFile"  type="checkbox" style="margin-left: 85px" id="checkFile3"> Load backup file
+                            <br>
+                            <div class="form-group" id="backup3">
+                                <input type="text" class="form-control" ng-model="backUp[3]" placeholder="Wallet JSON backup">
                             </div>
-
-                            <div id="block2" style="display: none">
-                                <label>Backup 2:</label>
-                                <input class="checkFile" type="checkbox" style="margin-left: 85px" id="checkFile2"> Load backup file
-                                <br>
-                                <div class="form-group" id="backup2">
-                                    <input type="text" class="form-control" ng-model="backUp[2]">
-                                </div>
-                                <div class="form-group" id="backupFile2" style="display: none">
-                                    <input type="file" ng-model="file2" on-read-file="showContent($fileContent, 2)" accept="application/json, .txt">
-                                </div>
-                                <div class="form-group" id="password2">
-                                    <label>Password:</label>
-                                    <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass2"> Encrypted private key
-                                    <input type="password" class="form-control" ng-model="pass2" placeholder="Password">
-                                </div>
-                                <div class="form-goup" id="passwordX2" style="display: none">
-                                    <br>
-                                    <input type="password" class="form-control" ng-model="passX[2]" id="passX2" placeholder="Encrypted private key">
-                                </div><hr>
+                            <div class="form-group" id="backupFile3" style="display: none">
+                                <input type="file" ng-model="file3" on-read-file="showContent($fileContent, 3)" accept="application/json, .txt">
                             </div>
-
-                            <div id="block3" style="display: none">
-                                <label>Backup 3:</label>
-                                <input class="checkFile"  type="checkbox" style="margin-left: 85px" id="checkFile3"> Load backup file
-                                <br>
-                                <div class="form-group" id="backup3">
-                                    <input type="text" class="form-control" ng-model="backUp[3]">
-                                </div>
-                                <div class="form-group" id="backupFile3" style="display: none">
-                                    <input type="file" ng-model="file3" on-read-file="showContent($fileContent, 3)" accept="application/json, .txt">
-                                </div>
-                                <div class="form-group" id="password3">
-                                    <label>Password:</label>
-                                    <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass3"> Encrypted private key
-                                    <input type="password" class="form-control" ng-model="pass3" placeholder="Password">
-                                </div>
-                                <div class="form-goup" id="passwordX3" style="display: none">
-                                    <br>
-                                    <input type="password" class="form-control" ng-model="passX[3]" id="passX3" placeholder="Encrypted private key">
-                                </div><hr>
+                            <div class="form-group" id="password3">
+                                <label>Password:</label>
+                                <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass3"> Encrypted private key
+                                <input type="password" class="form-control" ng-model="pass3" placeholder="Backup password">
                             </div>
+                            <div class="form-goup" id="passwordX3" style="display: none">
+                                <br>
+                                <input type="password" class="form-control" ng-model="passX[3]" id="passX3" placeholder="Encrypted private key password">
+                            </div><hr>
+                        </div>
 
-                            <div id="block4" style="display: none">
-                                <br>
-                                <label>Backup 4:</label>
-                                <input class="checkFile"  type="checkbox" style="margin-left: 85px" id="checkFile4"> Load backup file
-                                <br>
-                                <div class="form-group" id="backup4">
-                                    <input type="text" class="form-control" ng-model="backUp[4]">
-                                </div>
-                                <div class="form-group" id="backupFile4" style="display: none">
-                                    <input type="file" ng-model="file4" on-read-file="showContent($fileContent, 4)" accept="application/json, .txt">
-                                </div>
-                                <div class="form-group" id="password4">
-                                    <label>Password:</label>
-                                    <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass4"> Encrypted private key
-                                    <input type="password" class="form-control" ng-model="pass4" placeholder="Password">
-                                </div>
-                                <div class="form-goup" id="passwordX4" style="display: none">
-                                    <br>
-                                    <input type="password" class="form-control" ng-model="passX[4]" id="passX4" placeholder="Encrypted private key">
-                                </div><hr>
+                        <div id="block4" style="display: none">
+                            <br>
+                            <label>Backup 4:</label>
+                            <input class="checkFile"  type="checkbox" style="margin-left: 85px" id="checkFile4"> Load backup file
+                            <br>
+                            <div class="form-group" id="backup4">
+                                <input type="text" class="form-control" ng-model="backUp[4]" placeholder="Wallet JSON backup">
                             </div>
-
-                            <div id="block5" style="display: none">
-                                <br>
-                                <label>Backup 5:</label>
-                                <input class="checkFile"  type="checkbox" style="margin-left: 85px" id="checkFile5"> Load backup file
-                                <br>
-                                <div class="form-group" id="backup5">
-                                    <input type="text" class="form-control" ng-model="backUp[5]">
-                                </div>
-                                <div class="form-group" id="backupFile5" style="display: none">
-                                    <input type="file" ng-model="file5" on-read-file="showContent($fileContent, 5)" accept="application/json, .txt">
-                                </div>
-                                <div class="form-group" id="password5">
-                                    <label>Password:</label>
-                                    <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass5"> Encrypted private key
-                                    <input type="password" class="form-control" ng-model="pass5" placeholder="Password">
-                                </div>
-                                <div class="form-goup" id="passwordX5" style="display: none">
-                                    <br>
-                                    <input type="password" class="form-control" ng-model="passX[5]" id="passX5" placeholder="Encrypted private key">
-                                </div><hr>
+                            <div class="form-group" id="backupFile4" style="display: none">
+                                <input type="file" ng-model="file4" on-read-file="showContent($fileContent, 4)" accept="application/json, .txt">
                             </div>
+                            <div class="form-group" id="password4">
+                                <label>Password:</label>
+                                <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass4"> Encrypted private key
+                                <input type="password" class="form-control" ng-model="pass4" placeholder="Backup password">
+                            </div>
+                            <div class="form-goup" id="passwordX4" style="display: none">
+                                <br>
+                                <input type="password" class="form-control" ng-model="passX[4]" id="passX4" placeholder="Encrypted private key password">
+                            </div><hr>
+                        </div>
 
-                            <div id="block6" style="display: none">
+                        <div id="block5" style="display: none">
+                            <br>
+                            <label>Backup 5:</label>
+                            <input class="checkFile"  type="checkbox" style="margin-left: 85px" id="checkFile5"> Load backup file
+                            <br>
+                            <div class="form-group" id="backup5">
+                                <input type="text" class="form-control" ng-model="backUp[5]" placeholder="Wallet JSON backup">
+                            </div>
+                            <div class="form-group" id="backupFile5" style="display: none">
+                                <input type="file" ng-model="file5" on-read-file="showContent($fileContent, 5)" accept="application/json, .txt">
+                            </div>
+                            <div class="form-group" id="password5">
+                                <label>Password:</label>
+                                <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass5"> Encrypted private key
+                                <input type="password" class="form-control" ng-model="pass5" placeholder="Backup password">
+                            </div>
+                            <div class="form-goup" id="passwordX5" style="display: none">
                                 <br>
-                                <label>Backup 6:</label>
-                                <input class="checkFile"  type="checkbox" style="margin-left: 85px" id="checkFile6"> Load backup file
+                                <input type="password" class="form-control" ng-model="passX[5]" id="passX5" placeholder="Encrypted private key password">
+                            </div><hr>
+                        </div>
+
+                        <div id="block6" style="display: none">
+                            <br>
+                            <label>Backup 6:</label>
+                            <input class="checkFile"  type="checkbox" style="margin-left: 85px" id="checkFile6"> Load backup file
+                            <br>
+                            <div class="form-group" id="backup6">
+                                <input type="text" class="form-control" ng-model="backUp[6]" placeholder="Wallet JSON backup">
+                            </div>
+                            <div class="form-group" id="backupFile6" style="display: none">
+                                <input type="file" ng-model="file6" on-read-file="showContent($fileContent, 6)" accept="application/json, .txt">
+                            </div>
+                            <div class="form-group" id="password6" style="display: none">
+                                <label>Password:</label>
+                                <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass6"> Encrypted private key
+                                <input type="password" class="form-control" ng-model="pass6" placeholder="Backup password">
+                            </div>
+                            <div class="form-goup" id="passwordX6">
                                 <br>
-                                <div class="form-group" id="backup6">
-                                    <input type="text" class="form-control" ng-model="backUp[6]">
-                                </div>
-                                <div class="form-group" id="backupFile6" style="display: none">
-                                    <input type="file" ng-model="file6" on-read-file="showContent($fileContent, 6)" accept="application/json, .txt">
-                                </div>
-                                <div class="form-group" id="password6" style="display: none">
-                                    <label>Password:</label>
-                                    <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass6"> Encrypted private key
-                                    <input type="password" class="form-control" ng-model="pass6" placeholder="Password">
-                                </div>
-                                <div class="form-goup" id="passwordX6">
-                                    <br>
-                                    <input type="password" class="form-control" ng-model="passX[6]" id="passX6" placeholder="Encrypted private key">
-                                </div>
+                                <input type="password" class="form-control" ng-model="passX[6]" id="passX6" placeholder="Encrypted private key password">
+                            </div>
+                        </div>
+                        <button class="btn btn-primary" ng-click="getDataInput()">Begin scan</button><br><br>
+                        <div id="firstMessages">
+                            <div id="successMessage" class="alert alert-success" style="display: none;">
+                                {{successMessage}}
+                            </div>
+                            <div id="errorMessage" class="alert alert-danger" style="display: none;">
+                                {{errorMessage}}
+                            </div>
+                             <div id="statusMessage" class="alert alert-info" style="display: none;">
+                                {{statusMessage}}
                             </div>
                         </div>
                     </div>
-                    <br>
-                    <button class="btn btn-success" ng-click="getDataInput()">Begin scan</button><br><br>
-                    
-                    <div id="button2" style="display: none;">
-                        <div class="form-group">
-                            <label for="addr">Destination address:</label>
-                            <input type="text" class="form-control" ng-model="addr"  placeholder="Bitcoin address">
-                        </div>
-                        <div class="form-group">
-                            <button class="btn btn-success" ng-click="send()">Retrieve amount</button>
-                        </div>
+                    <div class="col-md-6">
+                        <label for="textArea">Feed back:</label>
+                        <textarea ng-model="textArea" rows="10" style="width: 100%">Feed Back...</textarea>
                     </div>
-                </form>
-            </div>
-            <div class="col-lg-6 col-lg-offset-1">
-                <textarea ng-model="textArea" rows="30" style="width: 100%"></textarea>
-            </div>
+                </div>
+            </form>
         </div>
     </body>
+    <footer class="page-footer">
+            <ul>
+                <li><a href="https://github.com/bitpay/copay-recovery">View the Code</a></li>
+            </ul>
+    </footer>
+</div>
 </html>

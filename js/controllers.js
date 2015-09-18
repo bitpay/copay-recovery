@@ -61,6 +61,7 @@ app.controller("recoveryController", function($scope, recoveryServices, lodash){
 		var passwordsX = [];
 		hideMessage();
 		$("#button2").hide();
+		$('#firstMessages').show();
 		totalBtc = 0;
 
 		backUps.push($scope.backUp[1],$scope.backUp[2],$scope.backUp[3],$scope.backUp[4],$scope.backUp[5],$scope.backUp[6]);
@@ -148,13 +149,12 @@ app.controller("recoveryController", function($scope, recoveryServices, lodash){
 					$scope.textArea += 'No change addresses available.\n\n';
 					console.log("No change addresses available.");
 				}
-
+				showMessage('Search completed', 2);
 				$("#button2").show();
-
 				if((totalBtc - fee) > 0)
-					showMessage('Available balance: ' + totalBtc.toFixed(8) + '  BTC.', 1);
+				$scope.totalBalance="Total amount available to send is: " + parseInt((totalBtc * 100000000).toFixed(0)) + " Satoshis";
 				else
-					showMessage('Available balance: 0 BTC.', 1);
+				$scope.totalBalance="No available amount to send";
 
 				console.log("Search complete.");
 			});
@@ -193,7 +193,6 @@ app.controller("recoveryController", function($scope, recoveryServices, lodash){
 			2 = success
 			3 = error
 		*/
-
 		if(type == 1){
 			$scope.statusMessage = message;
 			$('#statusMessage').show();
