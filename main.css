@@ -9,11 +9,9 @@ body {
 	margin:0;
 	padding:0;
 	height:100%;
-    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif
+    font-family: "Roboto","Helvetica Neue",Helvetica,Arial,sans-serif
 }
-label{
-    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
-}
+
 .page-footer {
     padding: 1em 0em 1em 0em;
     background: #F4F6F9;
@@ -21,9 +19,26 @@ label{
 	height:3em;
 	bottom:0;
 	left:0;
-    font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
 }
 #wrapper {
 	min-height:100%;
 	position:relative;
+}
+
+.page-header h1 {
+  color: white;
+}
+
+.page-header h4 {
+  color: #A8B2BC;
+  font-weight: 100;
+}
+
+.page-header .label {
+  Background: #3F546B;
+  font-size: 1.2rem;
+  font-weight: 100;
+  color: #A8B2BC;
+  letter-spacing: 3px;
+  text-transform: uppercase;
 }
