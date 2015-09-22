@@ -1,315 +1,349 @@
-var app = angular.module("recoveryApp.services",['ngLodash']);
-app.service('recoveryServices',['$http', 'lodash',function($http, lodash){
-	var bitcore = require('bitcore');
-	var Transaction = bitcore.Transaction;
-	var Address = bitcore.Address;
-	var GAP = 20;
-	var fee = 10000;
-	var root = {};
+var app = angular.module("recoveryApp.services", ['ngLodash']);
+app.service('recoveryServices', ['$http', 'lodash',
+  function($http, lodash) {
+    var bitcore = require('bitcore');
+    var Mnemonic = require('bitcore-mnemonic');
+    var Transaction = bitcore.Transaction;
+    var Address = bitcore.Address;
+    var GAP = 5;
+    var fee = 10000;
+    var root = {};
 
-	root.validateInput = function(dataInput, m, n){
-        var result = "";
-        var network = [];
-        var walletId =[];
-        var copayerId =[];
+    root.validateAddress = function(addr, totalBtc, network) {
+      result = '';
+      console.log('Validation in progress...');
+      console.log('Address: ', addr, '\nTotal BTC: ', totalBtc.toFixed(8), '\nNetwork: ', network);
 
-        if(dataInput.length == n){
-            var decryptData;
+      if (addr == '' || !Address.isValid(addr))
+        return result = 'Please enter a valid address.';
 
-            lodash.each(dataInput, function(di){
+      if ((totalBtc * 1e8 - fee).toFixed(0) <= 0)
+        return result = 'Funds are insufficient to complete the transaction';
 
-                if (!di.backup || !di.password ){
-                    result = "Please enter values for all entry boxes.";
-                    return result;
-                }
+      try {
+        new Address(addr, network);
+      } catch (e) {
+        return result = 'Address destination is not matched with the network backup type.';
+      }
 
-                try{
-                    JSON.parse(di.backup);
-                } 
-                catch(e){
-                    result = "Your JSON is not valid, please copy only the text within (and including) the { } brackets around it.";
-                    return result;
-                };
+      if (result != '') {
+        console.log("Validation result: " + result);
+        return result;
+      } else {
+        console.log("Validation result: Ok.");
+        return true;
+      }
+    }
 
-                try{
-                    decryptData = sjcl.decrypt(di.password, di.backup);
-                } 
-                catch(e) {
-                    result = "Password incorrect. Please check your input and try again.";
-                    return result;
-                };
-
-                if(JSON.parse(decryptData).derivationStrategy){
-                	if(JSON.parse(decryptData).derivationStrategy == "BIP44"){
-                		result = "BIP44 wallet type is not supported in this version.";
-                		return result;
-                	}
-                }
-                
-                if ((JSON.parse(decryptData).m != m) || (JSON.parse(decryptData).n != n)){
-                    result = "The wallet types (m-n) was not matched with values provided.";
-                    console.log('Data input m-n: ' + m + '-' + n);
-                    console.log('Data backup m-n: ' + (JSON.parse(decryptData).m + '-' + JSON.parse(decryptData).n));
-                    return result;
-                }
-
-                if(!(JSON.parse(decryptData).xPrivKeyEncrypted)){
-                   if(!(JSON.parse(decryptData).xPrivKey)){
-	                   result = "You are using a backup that can't be use to sign.";
-	                   return result;
-					}
-				}else{
-					try {
-                       var decryptXPrivKey = sjcl.decrypt(di.passwordX ,JSON.parse(decryptData).xPrivKeyEncrypted);
-                    } catch(e) {
-                    	result = "Encrypted private key needed. Please check your input and try again.";
-                    	return result;
-                    }
-				}
-
-				walletId.push(JSON.parse(decryptData).walletId);
-				copayerId.push(JSON.parse(decryptData).copayerId);
-				network.push(JSON.parse(decryptData).network);
-            });
-
-            if(result != ""){
-                console.log("Validation result: " + result);
-                return result;
-            }
-
-            if(lodash.uniq(network).length > 1){
-                result = "Check the input type networks.";
-                console.log("Validation result: " + result);
-                return result;
-            }
-            
-            if(lodash.uniq(copayerId).length != m){
-            	result = "Is not possible load more than one backup per copayer.";
-            	return result;
-            }
-            
-            if(lodash.uniq(walletId).length > 1){
-            	result = "Is not possible load backups from different wallets.";
-            	return result;
-            }
-			
-			console.log("Validation result: Ok.");
-			return true;
-        }else{
-            result = "Please enter values for all entry boxes.";
-            return result;
+    root.fromBackup = function(data, m, n, network) {
+      if (!data.backup)
+        return null;
+      try {
+        JSON.parse(data.backup);
+      } catch (ex) {
+        throw new Error("Your JSON is not valid, please copy only the text within (and including) the { } brackets around it.");
+      };
+      var payload;
+      try {
+        payload = sjcl.decrypt(data.password, data.backup);
+      } catch (ex) {
+        throw new Error("Incorrect backup password. Please check your input and try again.");
+      };
+      payload = JSON.parse(payload);
+      if ((payload.m != m) || (payload.n != n)) {
+        throw new Error("The wallet configuration (m-n) does not match with values provided.");
+      }
+      if (payload.network != network) {
+        throw new Error("Incorrect network.");
+      }
+      if (!(payload.xPrivKeyEncrypted) && !(payload.xPrivKey)) {
+        throw new Error("The backup does not have a private key");
+      }
+      var xPriv = payload.xPrivKey;
+      if (payload.xPrivKeyEncrypted) {
+        try {
+          xPriv = sjcl.decrypt(di.passwordX, payload.xPrivKeyEncrypted);
+        } catch (ex) {
+          throw new Error("Can not decrypt private key");
         }
+      }
+      var credential = {
+        walletId: payload.walletId,
+        copayerId: payload.copayerId,
+        xPriv: xPriv,
+        derivationStrategy: payload.derivationStrategy || "BIP45",
+        addressType: payload.addressType || "P2SH",
+        m: m,
+        n: n,
+        network: network,
+        from: "backup",
+      };
+      return credential;
     }
 
-	root.validateAddress = function(addr, totalBtc, network){
-		result = '';
-		console.log('Validation in progress...');
-		console.log('Address: ', addr, '\nTotal BTC: ', totalBtc.toFixed(8), '\nNetwork: ', network);
+    root.fromMnemonic = function(data, m, n, network) {
+      if (!data.backup)
+        return null;
 
-		if(addr == '' || !Address.isValid(addr))
-			return result = 'Please enter a valid address.';
+      var words = data.backup;
+      var passphrase = data.password;
+      var xPriv;
 
-		if((totalBtc * 100000000 - fee).toFixed(0) <= 0)
-			return result = 'Funds are insufficient to complete the transaction';
+      try {
+        var m = new Mnemonic(words);
+        xPriv = m.toHDPrivateKey(passphrase, network).toString();
+      } catch (ex) {
+        throw new Error("Your Mnemonic wallet seed is not valid.");
+      };
 
-		try{
-			new Address(addr, network);
-		}
-		catch (e){
-			return result = 'Address destination is not matched with the network backup type.';
-		}
-
-		if(result != ''){
-			console.log("Validation result: " + result);
-			return result;
-		}
-		else{
-			console.log("Validation result: Ok.");
-			return true;
-		}
-	}
-
-	root.getBackupData = function(backup, password, passwordX){
-		var jBackup = JSON.parse(sjcl.decrypt(password, backup).toString());
-
-		if(!jBackup.xPrivKeyEncrypted){
-			return {
-				network: jBackup.network,
-				xPrivKey: jBackup.xPrivKey,
-				m: jBackup.m,
-				n: jBackup.n
-			};
-		}else{
-			return {
-				network: jBackup.network,
-				xPrivKey: sjcl.decrypt(passwordX ,jBackup.xPrivKeyEncrypted),
-				m: jBackup.m,
-				n: jBackup.n	
-			}
-		}
-	}
-
-	root.getActiveAddresses = function(backupData, path, n, callback){
-		var network = lodash.uniq(lodash.pluck(backupData, 'network')).toString();
-		var inactiveCount = 0;
-		var count = 0;
-		var activeAddress = [];
-
-		function derive(index){
-			root.generateAddress(backupData, path, index, n, function(address){	
-				root.getAddressData(address, network, function(addressData){
-
-					if (!jQuery.isEmptyObject(addressData)) {
-						activeAddress.push(addressData);
-						inactiveCount = 0;
-						console.log(">>>> Active address found!");
-						console.log(addressData);
-					}
-					else 
-						inactiveCount++;
-
-					if (inactiveCount > GAP)
-						return callback(activeAddress);
-					else 
-						derive(index + 1);
-				});
-			});
-	    };
-		derive(0);
-	}
-
-	root.generateAddress = function(backupData, path, index, n, callback){
-		var derivedPublicKeys = [];
-		var derivedPrivateKeys = [];
-		var address = {};
-		var network = lodash.uniq(lodash.pluck(backupData, 'network'));
-		var xPrivKeys = lodash.pluck(backupData, 'xPrivKey');
-
-		lodash.each(xPrivKeys, function(xpk){
-			var hdPrivateKey = bitcore.HDPrivateKey(xpk);
-
-			// private key derivation
-			var derivedHdPrivateKey = hdPrivateKey.derive(path + index);
-			var derivedPrivateKey = derivedHdPrivateKey.privateKey;
-			derivedPrivateKeys.push(derivedPrivateKey);
-
-			// public key derivation
-			var derivedHdPublicKey = derivedHdPrivateKey.hdPublicKey;
-			var derivedPublicKey = derivedHdPublicKey.publicKey;
-			derivedPublicKeys.push(derivedPublicKey);
-		});
-
-		address = {
-			addressObject: bitcore.Address.createMultisig(derivedPublicKeys, n * 1, network),
-			pubKeys: derivedPublicKeys,
-			privKeys: derivedPrivateKeys,
-			path: path + index
-		};
-
-		return callback(address);
-	}
-
-	root.getAddressData = function(address, network, callback){
-		// call insight API to get address information
-		root.checkAddress(address.addressObject, network).then(function(respAddress){
-
-			// call insight API to get utxo information
-			root.checkUtxos(address.addressObject, network).then(function(respUtxo){
-
-				var addressData = {};
-
-				if(respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0){				
-					addressData = {
-						address: respAddress.data.addrStr, 
-						balance: respAddress.data.balance,
-						unconfirmedBalance: respAddress.data.unconfirmedBalance,
-						utxo: respUtxo.data,
-						privKeys: address.privKeys,
-						pubKeys: address.pubKeys,
-						path: address.path
-					};
-				}
-				return callback(addressData);
-			});
-		});
-	}
-
-	root.checkAddress = function(address, netrowk){
-		if(netrowk == 'testnet')
-			return $http.get('https://test-insight.bitpay.com/api/addr/' + address + '?noTxList=1');
-		else
-			return $http.get('https://insight.bitpay.com/api/addr/' + address + '?noTxList=1');
-	}
-
-	root.checkUtxos = function(address, netrowk){
-		if (netrowk == 'testnet')
-	    	return $http.get('https://test-insight.bitpay.com/api/addr/' + address + '/utxo?noCache=1');
-	    else
-	    	return $http.get('https://insight.bitpay.com/api/addr/' + address + '/utxo?noCache=1');
+      var credential = {
+        xPriv: xPriv,
+        derivationStrategy: "BIP44",
+        addressType: "P2PKH",
+        m: m,
+        n: n,
+        network: network,
+        from: "mnemonic",
+      };
+      return credential;
     }
 
-	root.createRawTx = function(address, netrowk, addressObjects, m){
-		var tx = new Transaction();
-		var privKeys = [];
-		var totalBalance = 0;
+    root.buildWallet = function(credentials) {
+      credentials = lodash.compact(credentials);
+      if (credentials.length == 0)
+        throw new Error('No data provided');
 
-		var address_ = new Address(address, netrowk);
+      if (lodash.uniq(lodash.pluck(credentials, 'from')).length != 1)
+        throw new Error('Mixed backup sources not supported');
 
-		lodash.each(addressObjects, function(ao){
-			if(ao.utxo.length > 0){
-				lodash.each(ao.utxo, function(u){
-					totalBalance += u.amount;
-					tx.from(u, ao.pubKeys, m * 1);
-					privKeys = privKeys.concat(ao.privKeys);
-				});
-			}
-		});
+      var result = lodash.pick(credentials[0], ["walletId", "derivationStrategy", "addressType", "m", "n", "network", "from"]);
 
-		var amount = parseInt((totalBalance * 100000000 - fee).toFixed(0));
-		
-		tx.to(address, amount);
-		tx.sign(lodash.uniq(privKeys));
+      result.copayers = lodash.map(credentials, function(c) {
+        if (c.walletId != result.walletId)
+          throw new Error("Backups do not belong to the same wallets.");
+        return {
+          copayerId: c.copayerId,
+          xPriv: c.xPriv,
+        };
+      });
+      if (result.from == "backup") {
+        if (lodash.uniq(lodash.compact(lodash.pluck(result.copayers, 'copayerId'))).length != result.copayers.length)
+          throw new Error("Some of the backups belong to the same copayers");
+      }
+      return result;
+    }
 
-		var rawTx = tx.serialize();
-		console.log("Raw transaction: ", rawTx);
-		return rawTx;
-	}
+    root.getWallet = function(data, m, n, network) {
+      var credentials = lodash.map(data, function(dataItem) {
+        if (dataItem.backup.charAt(0) == '{')
+          return root.fromBackup(dataItem, m, n, network);
+        else
+          return root.fromMnemonic(dataItem, m, n, network);
+      });
+      return root.buildWallet(credentials);
+    }
 
-	root.txBroadcast = function(rawTx, netrowk){
-		if (netrowk == 'testnet')
-			return $http.post('https://test-insight.bitpay.com/api/tx/send', {rawtx: rawTx});
-		else
-			return $http.post('https://insight.bitpay.com/api/tx/send', {rawtx: rawTx});
-	}
+    var PATHS = {
+      'BIP45': ["m/45'/2147483647/0/", "m/45'/2147483647/1/"],
+      'BIP44': {
+        'testnet': ["m/44'/1'/0'/0/", "m/44'/1'/0'/1/"],
+        'livenet': ["m/44'/0'/0'/0/", "m/44'/0'/0'/1/"]
+      },
+    }
 
-	return root;
-}]);
+    root.scanWallet = function(wallet, cb) {
 
-app.directive('onReadFile', function ($parse){
-	return {
-		restrict: 'A',
-		scope: false,
-		link: function(scope, element, attrs){
-            var fn = $parse(attrs.onReadFile);
-            
-			element.on('change', function(onChangeEvent){
-				var reader = new FileReader();
-                
-				reader.onload = function(onLoadEvent){
-					scope.$apply(function(){
-						fn(scope, {$fileContent:onLoadEvent.target.result});
-					});
-				};
+      console.log("Getting addresses...");
 
-				reader.readAsText((onChangeEvent.srcElement || onChangeEvent.target).files[0]);
-			});
-		}
-	};
+      // getting main addresses
+      root.getActiveAddresses(wallet, function(err, addresses) {
+        if (err) return cb(err);
+        var utxos = lodash.flatten(lodash.pluck(addresses, "utxo"));
+        var result = {
+          addresses: addresses,
+          balance: lodash.sum(utxos, 'amount'),
+        }
+        return cb(null, result);
+      });
+    }
+
+    root.getPaths = function(wallet) {
+      if (wallet.derivationStrategy == 'BIP45')
+        return PATHS[wallet.derivationStrategy];
+      if (wallet.derivationStrategy == 'BIP44')
+        return PATHS[wallet.derivationStrategy][wallet.network];
+    }
+
+    root.getActiveAddresses = function(wallet, cb) {
+      var inactiveCount = 0;
+      var count = 0;
+      var activeAddress = [];
+      var paths = root.getPaths(wallet);
+
+      function explorePath(i) {
+        if (i >= paths.length) return cb(null, activeAddress);
+        derive(paths[i], 0, function(err, addresses) {
+          if (err) return cb(err);
+          explorePath(i + 1);
+        });
+      }
+
+      function derive(basePath, index, cb) {
+        if (inactiveCount > GAP) return cb();
+        var address = root.generateAddress(wallet, basePath, index);
+        console.log(address);
+        root.getAddressData(address, wallet.network, function(err, addressData) {
+
+          if (err) return cb(err);
+          if (!lodash.isEmpty(addressData)) {
+            activeAddress.push(addressData);
+            inactiveCount = 0;
+
+          } else
+            inactiveCount++;
+
+          derive(basePath, index + 1, cb);
+        });
+      }
+      explorePath(0);
+    }
+
+    root.generateAddress = function(wallet, path, index) {
+      var derivedPublicKeys = [];
+      var derivedPrivateKeys = [];
+      var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
+
+      lodash.each(xPrivKeys, function(xpk) {
+        var hdPrivateKey = bitcore.HDPrivateKey(xpk);
+
+        // private key derivation
+        var derivedHdPrivateKey = hdPrivateKey.derive(path + index);
+        var derivedPrivateKey = derivedHdPrivateKey.privateKey;
+        derivedPrivateKeys.push(derivedPrivateKey);
+
+        // public key derivation
+        var derivedHdPublicKey = derivedHdPrivateKey.hdPublicKey;
+        var derivedPublicKey = derivedHdPublicKey.publicKey;
+        derivedPublicKeys.push(derivedPublicKey);
+      });
+
+      var address;
+      if (wallet.addressType == "P2SH")
+        address = bitcore.Address.createMultisig(derivedPublicKeys, wallet.n, wallet.network);
+      else if (wallet.addressType == "P2PKH")
+        address = Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
+      else
+        throw new Error('Address type not supported');
+
+      return {
+        addressObject: address,
+        pubKeys: derivedPublicKeys,
+        privKeys: derivedPrivateKeys,
+        path: path + index
+      };
+    }
+
+    root.getAddressData = function(address, network, cb) {
+      // call insight API to get address information
+      root.checkAddress(address.addressObject, network).then(function(respAddress) {
+
+        // call insight API to get utxo information
+        root.checkUtxos(address.addressObject, network).then(function(respUtxo) {
+
+          var addressData = {};
+
+          if (respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0) {
+            addressData = {
+              address: respAddress.data.addrStr,
+              balance: respAddress.data.balance,
+              unconfirmedBalance: respAddress.data.unconfirmedBalance,
+              utxo: respUtxo.data,
+              privKeys: address.privKeys,
+              pubKeys: address.pubKeys,
+              path: address.path
+            };
+          }
+          return cb(null, addressData);
+        });
+      });
+    }
+
+    root.checkAddress = function(address, network) {
+      if (network == 'testnet')
+        return $http.get('https://test-insight.bitpay.com/api/addr/' + address + '?noTxList=1');
+      else
+        return $http.get('https://insight.bitpay.com/api/addr/' + address + '?noTxList=1');
+    }
+
+    root.checkUtxos = function(address, network) {
+      if (network == 'testnet')
+        return $http.get('https://test-insight.bitpay.com/api/addr/' + address + '/utxo?noCache=1');
+      else
+        return $http.get('https://insight.bitpay.com/api/addr/' + address + '/utxo?noCache=1');
+    }
+
+    root.createRawTx = function(toAddress, scanResults, wallet) {
+      var tx = new Transaction();
+      var privKeys = [];
+      console.log(scanResults);
+      console.log(wallet);
+
+      new Address(toAddress, wallet.network);
+
+      lodash.each(scanResults.addresses, function(address) {
+        if (address.utxo.length > 0) {
+          lodash.each(address.utxo, function(u) {
+            tx.from(u, address.pubKeys, wallet.m);
+            privKeys = privKeys.concat(address.privKeys);
+          });
+        }
+      });
+
+      var amount = parseInt((scanResults.balance * 1e8 - fee).toFixed(0));
+      console.log('balance : ', amount);
+      tx.to(toAddress, amount);
+      tx.sign(lodash.uniq(privKeys));
+
+      var rawTx = tx.serialize();
+      console.log("Raw transaction: ", rawTx);
+      return rawTx;
+    }
+
+    root.txBroadcast = function(rawTx, network) {
+      if (network == 'testnet')
+        return $http.post('https://test-insight.bitpay.com/api/tx/send', {
+          rawtx: rawTx
+        });
+      else
+        return $http.post('https://insight.bitpay.com/api/tx/send', {
+          rawtx: rawTx
+        });
+    }
+
+    return root;
+  }
+]);
+
+app.directive('onReadFile', function($parse) {
+  return {
+    restrict: 'A',
+    scope: false,
+    link: function(scope, element, attrs) {
+      var fn = $parse(attrs.onReadFile);
+
+      element.on('change', function(onChangeEvent) {
+        var reader = new FileReader();
+
+        reader.onload = function(onLoadEvent) {
+          scope.$apply(function() {
+            fn(scope, {
+              $fileContent: onLoadEvent.target.result
+            });
+          });
+        };
+
+        reader.readAsText((onChangeEvent.srcElement || onChangeEvent.target).files[0]);
+      });
+    }
+  };
 });
-
-
-
-
-
-
-

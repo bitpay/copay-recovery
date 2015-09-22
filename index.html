@@ -7,27 +7,29 @@
     <script type="text/javascript" src="bower_components/sjcl/sjcl.js"></script>
     <script type="text/javascript" src="bower_components/bitcore/bitcore.min.js"></script>
     <script type="text/javascript" src="bower_components/bitcore/bitcore.js"></script>
+        <script type="text/javascript" src="bower_components/bitcore-mnemonic/bitcore-mnemonic.min.js"></script>
     <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="bower_components/ng-lodash/build/ng-lodash.min.js"></script>
-    <script type="text/javascript" src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+    <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="main.css"></link>
+    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
     <script type="text/javascript" src="js/services.js"></script>
     <script type="text/javascript" src="js/controllers.js"></script>
-    <title>Address Generator</title>
+    <title>Copay recovery tool</title>
 </head>
 <div id="wrapper">
-      <div class="container">
+      <header class="page-header">
         <img src="./img/logo-white.svg" alt="Copay" width="100">
           <span class="label">recovery tool</span>
           <h4 class="pull-right">Use your backups and passwords to recover your BTC</h4>
-      </div>
+      </header>
     <body ng-controller="recoveryController" style="background-color:#F4F6F9">
         <div class="container">
             <form>
                 <label>Select total number of copayers:</label>
-                <select class="form-group" id="selectM">
+                <select class="form-group" id="selectN">
                     <option id="1">1</option>
                     <option id="2">2</option>
                     <option id="3">3</option>
@@ -36,48 +38,51 @@
                     <option id="6">6</option>
                 </select><br>
                 <label>Select require number of signatures:</label>
-                <select class="form-group" id="selectN">
+                <select class="form-group" id="selectM">
                     <option id="1">1</option>
                     <option id="2">2</option>
                     <option id="3">3</option>
                     <option id="4">4</option>
                     <option id="5">5</option>
                     <option id="6">6</option>
-                </select>
+                </select><br>
+                <label>Type of network:</label>
+                <select class="form-group" id="selectNet">
+                    <option id="livenet">Livenet</option>
+                    <option id="testnet">Testnet</option>
+                </select><br><br>
                 <div class="row">
-                    <div class="col-md-5">
+                    <div class="col-md-8">
                         <div id="button2" style="display: none;">
-                            <form class="form-inline">
+                            <label for="addr">Insert destination address (the total amount will be send there):</label>
+                            <form class="form-inline" role="form">
                                 <div class="form-group">
-                                    <label for="addr">Insert destination address (the total amount will be send there):</label>
                                     <div class="input-group">
-                                        <div class="input-group-addon">Destination Address :</div>
+                                        <div class="input-group-addon" >Destination Address :</div>
                                         <input type="text" class="form-control" ng-model="addr">
                                     </div>
-                                    <span id="helpBlock" class="help-block">{{totalBalance}}</span>
+                                </div>
+                                <button class="btn btn-primary" ng-click="sendFunds()">Transfer Amount</button>
+                                <span id="helpBlock" class="help-block">{{totalBalance}}</span>
+                                <div class="form-group">
+                                    <div id="successMessage2" class="alert alert-success" style="display: none;">
+                                        {{successMessage2}}
+                                    </div>
+                                    <div id="errorMessage2" class="alert alert-danger" style="display: none;">
+                                        {{errorMessage2}}
+                                    </div>
+                                    <div id="statusMessage2" class="alert alert-info" style="display: none;">
+                                        {{statusMessage2}}
+                                    </div>
                                 </div>
                             </form>
-                            <div class="form-group">
-                                <button class="btn btn-primary" ng-click="send()">Transfer Amount</button>
-                            </div>
                         </div>
-                       <!--  <div id="secondMessages" style="display: none;">
-                            <div id="messageSuccess" class="alert alert-success" style="display: none;">
-                                {{messageSuccess}}
-                            </div>
-                            <div id="messageError" class="alert alert-danger" style="display: none;">
-                                {{messageError}}
-                            </div>
-                            <div id="statusMessage" class="alert alert-info" style="display: none;">
-                                {{statusMessage}}
-                            </div>
-                        </div> -->
                     </div>
                 </div>
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-5">
                         <div class="form-group" id="block1">
-                            <label>Backup 1:</label>
+                            <label>JSON Backup or Mnemonic 1:</label>
                             <input class="checkFile" type="checkbox" style="margin-left: 85px" id="checkFile1"> Load backup file<br>
                             <div class="form-group" id="backup1">
                                 <input type="text" class="form-control" ng-model="backUp[1]" placeholder="Wallet JSON backup">
@@ -88,7 +93,7 @@
                             <div class="form-group" id="password1">
                                 <label>Password:</label>
                                 <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass1"> Encrypted private key
-                                <input type="password" class="form-control" ng-model="pass1" placeholder="Backup password">
+                                <input type="password" class="form-control" ng-model="pass[1]" placeholder="Backup password">
                             </div>
                             <div class="form-goup" id="passwordX1" style="display: none">
                                 <br>
@@ -109,7 +114,7 @@
                             <div class="form-group" id="password2">
                                 <label>Password:</label>
                                 <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass2"> Encrypted private key
-                                <input type="password" class="form-control" ng-model="pass2" placeholder="Backup password">
+                                <input type="password" class="form-control" ng-model="pass[2]" placeholder="Backup password">
                             </div>
                             <div class="form-goup" id="passwordX2" style="display: none">
                                 <br>
@@ -130,7 +135,7 @@
                             <div class="form-group" id="password3">
                                 <label>Password:</label>
                                 <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass3"> Encrypted private key
-                                <input type="password" class="form-control" ng-model="pass3" placeholder="Backup password">
+                                <input type="password" class="form-control" ng-model="pass[3]" placeholder="Backup password">
                             </div>
                             <div class="form-goup" id="passwordX3" style="display: none">
                                 <br>
@@ -152,7 +157,7 @@
                             <div class="form-group" id="password4">
                                 <label>Password:</label>
                                 <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass4"> Encrypted private key
-                                <input type="password" class="form-control" ng-model="pass4" placeholder="Backup password">
+                                <input type="password" class="form-control" ng-model="pass[4]" placeholder="Backup password">
                             </div>
                             <div class="form-goup" id="passwordX4" style="display: none">
                                 <br>
@@ -174,7 +179,7 @@
                             <div class="form-group" id="password5">
                                 <label>Password:</label>
                                 <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass5"> Encrypted private key
-                                <input type="password" class="form-control" ng-model="pass5" placeholder="Backup password">
+                                <input type="password" class="form-control" ng-model="pass[5]" placeholder="Backup password">
                             </div>
                             <div class="form-goup" id="passwordX5" style="display: none">
                                 <br>
@@ -196,15 +201,14 @@
                             <div class="form-group" id="password6" style="display: none">
                                 <label>Password:</label>
                                 <input class="checkPassX" type="checkbox" style="margin-left: 80px" id="checkPass6"> Encrypted private key
-                                <input type="password" class="form-control" ng-model="pass6" placeholder="Backup password">
+                                <input type="password" class="form-control" ng-model="pass[6]" placeholder="Backup password">
                             </div>
                             <div class="form-goup" id="passwordX6">
                                 <br>
                                 <input type="password" class="form-control" ng-model="passX[6]" id="passX6" placeholder="Encrypted private key password">
                             </div>
                         </div>
-                        <button class="btn btn-primary" ng-click="getDataInput()">Begin scan</button><br><br>
-                        <div id="firstMessages">
+                        <button class="btn btn-primary" ng-click="proccessInputs()">Begin scan</button><br><br>
                             <div id="successMessage" class="alert alert-success" style="display: none;">
                                 {{successMessage}}
                             </div>
@@ -214,14 +218,12 @@
                              <div id="statusMessage" class="alert alert-info" style="display: none;">
                                 {{statusMessage}}
                             </div>
-                        </div>
                     </div>
                     <div class="col-md-6">
-                        <label for="textArea">Feed back:</label>
-                        <textarea ng-model="textArea" rows="10" style="width: 100%">Feed Back...</textarea>
+                        <label for="textArea">Feedback:</label>
+                        <textarea ng-model="textArea" rows="10" style="width: 100%">Feedback...</textarea>
                     </div>
                 </div>
-            </form>
         </div>
     </body>
     <footer class="page-footer">
