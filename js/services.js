@@ -5,7 +5,7 @@ app.service('recoveryServices', ['$http', 'lodash',
     var Mnemonic = require('bitcore-mnemonic');
     var Transaction = bitcore.Transaction;
     var Address = bitcore.Address;
-    var GAP = 5;
+    var GAP = 20;
     var fee = 10000;
     var root = {};
 
@@ -175,13 +175,12 @@ app.service('recoveryServices', ['$http', 'lodash',
     }
 
     root.getActiveAddresses = function(wallet, cb) {
-      var inactiveCount = 0;
-      var count = 0;
       var activeAddress = [];
       var paths = root.getPaths(wallet);
 
       function explorePath(i) {
         if (i >= paths.length) return cb(null, activeAddress);
+        var inactiveCount = 0;
         derive(paths[i], 0, function(err, addresses) {
           if (err) return cb(err);
           explorePath(i + 1);
@@ -193,12 +192,11 @@ app.service('recoveryServices', ['$http', 'lodash',
         var address = root.generateAddress(wallet, basePath, index);
         console.log(address);
         root.getAddressData(address, wallet.network, function(err, addressData) {
-
           if (err) return cb(err);
+
           if (!lodash.isEmpty(addressData)) {
             activeAddress.push(addressData);
             inactiveCount = 0;
-
           } else
             inactiveCount++;
 
