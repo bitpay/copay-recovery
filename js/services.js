@@ -1,39 +1,13 @@
 var app = angular.module("recoveryApp.services", ['ngLodash']);
-app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
-  function($rootScope, $http, lodash) {
+app.service('recoveryServices', ['$http', 'lodash',
+  function($http, lodash) {
     var bitcore = require('bitcore');
     var Mnemonic = require('bitcore-mnemonic');
     var Transaction = bitcore.Transaction;
     var Address = bitcore.Address;
-    var GAP = 5;
+    var GAP = 20;
     var fee = 10000;
     var root = {};
-
-    root.validateAddress = function(addr, totalBtc, network) {
-      result = '';
-      console.log('Validation in progress...');
-      console.log('Address: ', addr, '\nTotal BTC: ', totalBtc.toFixed(8), '\nNetwork: ', network);
-
-      if (addr == '' || !Address.isValid(addr))
-        return result = 'Please enter a valid address.';
-
-      if ((totalBtc * 1e8 - fee).toFixed(0) <= 0)
-        return result = 'Funds are insufficient to complete the transaction';
-
-      try {
-        new Address(addr, network);
-      } catch (e) {
-        return result = 'Address destination is not matched with the network backup type.';
-      }
-
-      if (result != '') {
-        console.log("Validation result: " + result);
-        return result;
-      } else {
-        console.log("Validation result: Ok.");
-        return true;
-      }
-    }
 
     root.fromBackup = function(data, m, n, network) {
       if (!data.backup)
@@ -47,7 +21,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       try {
         payload = sjcl.decrypt(data.password, data.backup);
       } catch (ex) {
-        throw new Error("Incorrect password.");
+        throw new Error("Incorrect backup password. Please check your input and try again.");
       };
       payload = JSON.parse(payload);
       if ((payload.m != m) || (payload.n != n)) {
@@ -93,7 +67,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         var m = new Mnemonic(words);
         xPriv = m.toHDPrivateKey(passphrase, network).toString();
       } catch (ex) {
-        throw new Error("Mnemonic seed is not valid.");
+        throw new Error("Your Mnemonic wallet seed is not valid.");
       };
 
       var credential = {
@@ -152,6 +126,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     }
 
     root.scanWallet = function(wallet, cb) {
+
       console.log("Getting addresses...");
 
       // getting main addresses
@@ -174,13 +149,13 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     }
 
     root.getActiveAddresses = function(wallet, cb) {
-      var inactiveCount = 0;
-      var count = 0;
       var activeAddress = [];
       var paths = root.getPaths(wallet);
+      var inactiveCount;
 
       function explorePath(i) {
         if (i >= paths.length) return cb(null, activeAddress);
+        inactiveCount = 0;
         derive(paths[i], 0, function(err, addresses) {
           if (err) return cb(err);
           explorePath(i + 1);
@@ -190,13 +165,13 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       function derive(basePath, index, cb) {
         if (inactiveCount > GAP) return cb();
         var address = root.generateAddress(wallet, basePath, index);
+        console.log(address);
         root.getAddressData(address, wallet.network, function(err, addressData) {
-
           if (err) return cb(err);
+
           if (!lodash.isEmpty(addressData)) {
             activeAddress.push(addressData);
             inactiveCount = 0;
-
           } else
             inactiveCount++;
 
@@ -260,7 +235,6 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
               pubKeys: address.pubKeys,
               path: address.path
             };
-            $rootScope.$emit('progress', addressData);
           }
           return cb(null, addressData);
         });
@@ -282,30 +256,40 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     }
 
     root.createRawTx = function(toAddress, scanResults, wallet) {
-      var tx = new Transaction();
-      var privKeys = [];
-      console.log(scanResults);
-      console.log(wallet);
-
-      new Address(toAddress, wallet.network);
-
-      lodash.each(scanResults.addresses, function(address) {
-        if (address.utxo.length > 0) {
-          lodash.each(address.utxo, function(u) {
-            tx.from(u, address.pubKeys, wallet.m);
-            privKeys = privKeys.concat(address.privKeys);
-          });
-        }
-      });
+      if (!toAddress || !Address.isValid(toAddress))
+        throw new Error('Please enter a valid address.');
 
       var amount = parseInt((scanResults.balance * 1e8 - fee).toFixed(0));
-      console.log('balance : ', amount);
-      tx.to(toAddress, amount);
-      tx.sign(lodash.uniq(privKeys));
+      if (amount <= 0)
+        throw new Error('Funds are insufficient to complete the transaction');
 
-      var rawTx = tx.serialize();
-      console.log("Raw transaction: ", rawTx);
-      return rawTx;
+      try {
+        new Address(toAddress, wallet.network);
+      } catch (ex) {
+        throw new Error('Incorrect destination address network');
+      }
+
+      try {
+        var privKeys = [];
+        var tx = new Transaction();
+        lodash.each(scanResults.addresses, function(address) {
+          if (address.utxo.length > 0) {
+            lodash.each(address.utxo, function(u) {
+              tx.from(u, address.pubKeys, wallet.m);
+              privKeys = privKeys.concat(address.privKeys);
+            });
+          }
+        });
+        tx.to(toAddress, amount);
+        tx.sign(lodash.uniq(privKeys));
+
+        var rawTx = tx.serialize();
+        console.log("Raw transaction: ", rawTx);
+        return rawTx;
+      } catch (ex) {
+        console.log(ex);
+        throw new Error('Could not build tx', ex);
+      }
     }
 
     root.txBroadcast = function(rawTx, network) {
