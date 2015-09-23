@@ -261,7 +261,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         throw new Error('Please enter a valid address.');
 
       var amount = parseInt((scanResults.balance * 1e8 - fee).toFixed(0));
-      console.log(amount)
+
       if (amount <= 0)
         throw new Error('Funds are insufficient to complete the transaction');
 
