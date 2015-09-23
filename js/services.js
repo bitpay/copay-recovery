@@ -1,6 +1,6 @@
 var app = angular.module("recoveryApp.services", ['ngLodash']);
-app.service('recoveryServices', ['$http', 'lodash',
-  function($http, lodash) {
+app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
+  function($rootScope, $http, lodash) {
     var bitcore = require('bitcore');
     var Mnemonic = require('bitcore-mnemonic');
     var Transaction = bitcore.Transaction;
@@ -21,7 +21,7 @@ app.service('recoveryServices', ['$http', 'lodash',
       try {
         payload = sjcl.decrypt(data.password, data.backup);
       } catch (ex) {
-        throw new Error("Incorrect backup password. Please check your input and try again.");
+        throw new Error("Incorrect backup password");
       };
       payload = JSON.parse(payload);
       if ((payload.m != m) || (payload.n != n)) {
@@ -67,7 +67,7 @@ app.service('recoveryServices', ['$http', 'lodash',
         var m = new Mnemonic(words);
         xPriv = m.toHDPrivateKey(passphrase, network).toString();
       } catch (ex) {
-        throw new Error("Your Mnemonic wallet seed is not valid.");
+        throw new Error("Mnemonic wallet seed is not valid.");
       };
 
       var credential = {
@@ -236,6 +236,7 @@ app.service('recoveryServices', ['$http', 'lodash',
               path: address.path
             };
           }
+          $rootScope.$emit('progress', addressData);
           return cb(null, addressData);
         });
       });
@@ -260,6 +261,7 @@ app.service('recoveryServices', ['$http', 'lodash',
         throw new Error('Please enter a valid address.');
 
       var amount = parseInt((scanResults.balance * 1e8 - fee).toFixed(0));
+      console.log(amount)
       if (amount <= 0)
         throw new Error('Funds are insufficient to complete the transaction');
 
@@ -275,8 +277,12 @@ app.service('recoveryServices', ['$http', 'lodash',
         lodash.each(scanResults.addresses, function(address) {
           if (address.utxo.length > 0) {
             lodash.each(address.utxo, function(u) {
-              tx.from(u, address.pubKeys, wallet.m);
+              if (wallet.addressType == 'P2SH')
+                tx.from(u, address.pubKeys, wallet.m);
+              else
+                tx.from(u);
               privKeys = privKeys.concat(address.privKeys);
+
             });
           }
         });
