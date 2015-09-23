@@ -89,8 +89,8 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     }
 
     recoveryServices.txBroadcast(rawTx, network).then(function(response) {
-        showMessage((scanResults.balance.toFixed(0) * 1e8 - fee * 1e8) + ' BTC sent to address: ' + toAddress, 2);
-        console.log('Transaction complete.  ' + (scanResults.balance.toFixed(0) * 1e8 - fee * 1e8) + ' BTC sent to address: ' + toAddress);
+        showMessage((scanResults.balance - fee) + ' BTC sent to address: ' + toAddress, 2);
+        console.log('Transaction complete.  ' + (scanResults.balance - fee) + ' BTC sent to address: ' + toAddress);
       },
       function(error) {
         showMessage('Could not broadcast transaction. Please, try later.', 3);
