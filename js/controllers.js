@@ -63,7 +63,6 @@ app.controller("recoveryController", function($scope, recoveryServices, lodash) 
     hideMessage();
     $("#button2").hide();
     totalBtc = 0;
-    console.log('fuck ', $scope.backUp, $scope.pass, $scope.passX);
     var inputs = lodash.map(lodash.range(1, m + 1), function(i) {
       return {
         backup: $scope.backUp[i],
@@ -74,8 +73,7 @@ app.controller("recoveryController", function($scope, recoveryServices, lodash) 
     try {
       wallet = recoveryServices.getWallet(inputs, m, n, network);
     } catch (ex) {
-      showMessage(ex.message, 3);
-      return;
+      return showMessage(ex.message, 3);
     }
     $scope.textArea = 'Main addresses:\n\n';
 
@@ -98,31 +96,24 @@ app.controller("recoveryController", function($scope, recoveryServices, lodash) 
   }
 
   $scope.sendFunds = function() {
-    var addr = $scope.addr;
+    var toAddress = $scope.addr;
 
-    var validation = recoveryServices.validateAddress(addr, scanResults.balance, network);
-    if (validation == true) {
-      showMessage2('Creating transaction to retrieve total amount...', 1);
+    var rawTx;
+    try {
+      rawTx = recoveryServices.createRawTx(toAddress, scanResults, wallet);
+    } catch (ex) {
+      return showMessage2(ex.message, 3);
+    }
 
-      var rawTx;
-      try {
-        rawTx = recoveryServices.createRawTx(addr, scanResults, wallet);
-      } catch (ex) {
-        throw new Error("Could not create transaction.", ex);
-      }
-
-      recoveryServices.txBroadcast(rawTx, network).then(function(response) {
-          showMessage2((scanResults.balance * 1e8).toFixed(0) + ' Satoshis sent to address: ' + addr, 2);
-          console.log('Transaction complete.  ' + (scanResults.balance * 1e8 - fee).toFixed(0) + ' BTC sent to address: ' + addr);
-        },
-        function(error) {
-          showMessage2('Is not possible make the transaction. Please, try later.', 3);
-          console.log('Is not possible make the transaction. Please, try later.');
-        });
-    } else
-      showMessage2(validation, 3);
-  }
-
+    recoveryServices.txBroadcast(rawTx, network).then(function(response) {
+        showMessage2((scanResults.balance * 1e8 - fee * 1e8).toFixed(0) + ' Satoshis sent to address: ' + toAddress, 2);
+        console.log('Transaction complete.  ' + (scanResults.balance * 1e8 - fee * 1e8).toFixed(0) + ' Satoshis sent to address: ' + toAddress);
+      },
+      function(error) {
+        console.log('Could not broadcast transaction. Please, try later.');
+        showMessage2('Could not broadcast transaction. Please, try later.', 3);
+      });
+  };
 
 
   function printFeedBack(addressObject) {
