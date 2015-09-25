@@ -83,7 +83,7 @@
                   </div>
                 </div>
                 <div class="form-group panel" id="block1">
-                  <div class="row m20b">
+                  <div class="row">
                     <div class="form-group col-lg-6" id="backup1">
                         <label>Backup for copayer 1:</label>
                         <input type="text" class="form-control" ng-model="backUp[1]" placeholder="Mnemonic or export wallet data">
@@ -106,113 +106,127 @@
                   </div>
                 </div>
 
-                <div id="block2" style="display: none">
-                    <label>Backup for copayer 2:</label>
-                    <br>
-                    <div class="form-group" id="backup2">
+                <div class="form-group panel" id="block2" style="display: none;">
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="backup2">
+                        <label>Backup for copayer 2:</label>
                         <input type="text" class="form-control" ng-model="backUp[2]" placeholder="Mnemonic or export wallet data">
                     </div>
-                    <div class="form-group" id="backupFile2">
+                    <div class="form-group col-lg-6" id="backupFile2">
                         <label>Or upload a file: </label>
-                        <input type="file" ng-model="file2" on-read-file="showContent($fileContent, 2)" accept="application/json, .txt" style="display: inline">
+                        <input type="file" ng-model="file2" on-read-file="showContent($fileContent, 2)" accept="application/json, .txt">
                     </div>
-                    <div class="form-group" id="password2">
+                  </div>
+                  <hr>
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="password2">
                         <label>Password:</label>
                         <input type="password" class="form-control" ng-model="pass[2]">
                     </div>
-                    <div class="form-goup" id="passwordX2">
-                        <br>
+                    <div class="form-goup col-lg-6" id="passwordX2">
                         <label>Encrypted private key password (in case you have one):</label>
                         <input type="password" class="form-control" ng-model="passX[2]" id="passX2">
-                    </div><hr>
+                    </div>
+                  </div>
                 </div>
 
-                <div id="block3" style="display: none">
-                    <label>Backup for copayer 3:</label>
-                    <br>
-                    <div class="form-group" id="backup3">
+                <div class="form-group panel" id="block3" style="display: none;">
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="backup3">
+                        <label>Backup for copayer 3:</label>
                         <input type="text" class="form-control" ng-model="backUp[3]" placeholder="Mnemonic or export wallet data">
                     </div>
-                    <div class="form-group" id="backupFile3">
+                    <div class="form-group col-lg-6" id="backupFile3">
                         <label>Or upload a file: </label>
-                        <input type="file" ng-model="file3" on-read-file="showContent($fileContent, 3)" accept="application/json, .txt" style="display: inline">
+                        <input type="file" ng-model="file3" on-read-file="showContent($fileContent, 3)" accept="application/json, .txt">
                     </div>
-                    <div class="form-group" id="password3">
+                  </div>
+                  <hr>
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="password3">
                         <label>Password:</label>
                         <input type="password" class="form-control" ng-model="pass[3]">
                     </div>
-                    <div class="form-goup" id="passwordX3">
-                        <br>
+                    <div class="form-goup col-lg-6" id="passwordX3">
                         <label>Encrypted private key password (in case you have one):</label>
                         <input type="password" class="form-control" ng-model="passX[3]" id="passX3">
-                    </div><hr>
+                    </div>
+                  </div>
                 </div>
 
-                <div id="block4" style="display: none">
-                    <br>
-                    <label>Backup for copayer 4:</label>
-                    <br>
-                    <div class="form-group" id="backup4">
+                <div class="form-group panel" id="block4" style="display: none;">
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="backup4">
+                        <label>Backup for copayer 4:</label>
                         <input type="text" class="form-control" ng-model="backUp[4]" placeholder="Mnemonic or export wallet data">
                     </div>
-                    <div class="form-group" id="backupFile4">
+                    <div class="form-group col-lg-6" id="backupFile4">
                         <label>Or upload a file: </label>
-                        <input type="file" ng-model="file4" on-read-file="showContent($fileContent, 4)" accept="application/json, .txt" style="display: inline">
+                        <input type="file" ng-model="file4" on-read-file="showContent($fileContent, 4)" accept="application/json, .txt">
                     </div>
-                    <div class="form-group" id="password4">
+                  </div>
+                  <hr>
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="password4">
                         <label>Password:</label>
                         <input type="password" class="form-control" ng-model="pass[4]">
                     </div>
-                    <div class="form-goup" id="passwordX4">
-                        <br>
+                    <div class="form-goup col-lg-6" id="passwordX4">
                         <label>Encrypted private key password (in case you have one):</label>
                         <input type="password" class="form-control" ng-model="passX[4]" id="passX4">
-                    </div><hr>
+                    </div>
+                  </div>
                 </div>
 
-                <div id="block5" style="display: none">
-                    <br>
-                    <label>Backup for copayer 5:</label>
-                    <br>
-                    <div class="form-group" id="backup5">
+                <div class="form-group panel" id="block5" style="display: none;">
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="backup5">
+                        <label>Backup for copayer 5:</label>
                         <input type="text" class="form-control" ng-model="backUp[5]" placeholder="Mnemonic or export wallet data">
                     </div>
-                    <div class="form-group" id="backupFile5">
+                    <div class="form-group col-lg-6" id="backupFile5">
                         <label>Or upload a file: </label>
-                        <input type="file" ng-model="file5" on-read-file="showContent($fileContent, 5)" accept="application/json, .txt" style="display: inline">
+                        <input type="file" ng-model="file5" on-read-file="showContent($fileContent, 5)" accept="application/json, .txt">
                     </div>
-                    <div class="form-group" id="password5">
+                  </div>
+                  <hr>
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="password5">
                         <label>Password:</label>
                         <input type="password" class="form-control" ng-model="pass[5]">
                     </div>
-                    <div class="form-goup" id="passwordX5">
-                        <br>
+                    <div class="form-goup col-lg-6" id="passwordX5">
                         <label>Encrypted private key password (in case you have one):</label>
                         <input type="password" class="form-control" ng-model="passX[5]" id="passX5">
-                    </div><hr>
+                    </div>
+                  </div>
                 </div>
 
-                <div id="block6" style="display: none">
-                    <br>
-                    <label>Backup for copayer 6:</label>
-                    <br>
-                    <div class="form-group" id="backup6">
+                <div class="form-group panel" id="block6" style="display: none;">
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="backup6">
+                        <label>Backup for copayer 6:</label>
                         <input type="text" class="form-control" ng-model="backUp[6]" placeholder="Mnemonic or export wallet data">
                     </div>
-                    <div class="form-group" id="backupFile6">
+                    <div class="form-group col-lg-6" id="backupFile6">
                         <label>Or upload a file: </label>
-                        <input type="file" ng-model="file6" on-read-file="showContent($fileContent, 6)" accept="application/json, .txt" style="display: inline">
+                        <input type="file" ng-model="file6" on-read-file="showContent($fileContent, 6)" accept="application/json, .txt">
                     </div>
-                    <div class="form-group" id="password6">
+                  </div>
+                  <hr>
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="password6">
                         <label>Password:</label>
                         <input type="password" class="form-control" ng-model="pass[6]">
                     </div>
-                    <div class="form-goup" id="passwordX6">
-                        <br>
+                    <div class="form-goup col-lg-6" id="passwordX6">
                         <label>Encrypted private key password (in case you have one):</label>
                         <input type="password" class="form-control" ng-model="passX[6]" id="passX6">
-                    </div><hr>
+                    </div>
+                  </div>
                 </div>
+
+
                 <button class="btn btn-primary btn-lg btn-block" ng-click="proccessInputs()">Scan wallet</button><br><br>
             </div>
             <div class="modal fade" id="myModal" data-backdrop="static" data-keyboard="false">
