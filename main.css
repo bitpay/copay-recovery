@@ -3,19 +3,28 @@
     margin-top: 0;
     padding: 2em 0em 2em 0em;
     background: #2C3E50;
+    margin-bottom: 3rem;
 }
 html,
 body {
+  background-color: #F1f3f5;
 	margin:0;
 	padding:0;
 	height:100%;
     font-family: "Roboto","Helvetica Neue",Helvetica,Arial,sans-serif
 }
 
+label {
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.m20b { margin-bottom: 20px;}
+
 .page-footer {
-    padding: 1em 0em 1em 0em;
-    background: #F4F6F9;
-    width:100%;
+  padding: 1em 0em 1em 0em;
+  background: #F4F6F9;
+  width:100%;
 	height:3em;
 	bottom:0;
 	left:0;
@@ -35,10 +44,28 @@ body {
 }
 
 .page-header .label {
+  vertical-align: top;
   Background: #3F546B;
   font-size: 1.2rem;
   font-weight: 100;
   color: #A8B2BC;
   letter-spacing: 3px;
   text-transform: uppercase;
+  margin-left: 15px;
+  margin-top: 4px;
+  display: block;
+  float: left;
+}
+
+.panel {
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.panel h4 {
+  margin: 0 0 20px 0;
+  border-bottom: 1px solid #f1f3f5;
+  padding-bottom: 1rem;
+  text-transform: uppercase;
+  font-size: 1.4rem;
 }
