@@ -23,72 +23,87 @@
 <div id="wrapper">
     <header class="page-header">
         <div class="container">
-            <img src="./img/logo-white.svg" alt="Copay" width="100" style="vertical-align: middle";>
+            <img src="./img/logo-white.svg" alt="Copay" width="80" class="pull-left">
             <span class="label">recovery tool</span>
-            <ul class="pull-right">
-                <li><a href="https://github.com/bitpay/copay-recovery">View the Code</a></li>
-            </ul>
+            <a href="https://github.com/bitpay/copay-recovery" type="button" class="btn btn-default btn-primary pull-right" target="blank">View the Code</a>
         </div>
     </header>
-    <body ng-controller="recoveryController" style="background-color:#F4F6F9">
+    <div class="container">
+      <div id="successMessage" class="alert alert-success" style="display: none;">
+          {{successMessage}}
+      </div>
+      <div id="errorMessage" class="alert alert-danger" style="display: none;">
+          {{errorMessage}}
+      </div>
+      <div id="statusMessage" class="alert alert-info" style="display: none;">
+          {{statusMessage}}
+      </div>
+    </div>
+    <body ng-controller="recoveryController">
         <div class="container">
             <div id="sendBlock" style="display: none;">
-                <div class="form-group">
+                <div class="form-group panel">
                     <label>{{totalBalance}}</label>
                     <div class="input-group">
-                        <div class="input-group-addon" >Destination Address :</div>
+                        <div class="input-group-addon" >Destination Address:</div>
                         <input type="text" class="form-control" ng-model="addr">
                     </div>
                 </div>
-                <button class="btn btn-primary" ng-click="sendFunds()">Transfer</button><br><br>
+                <button class="btn btn-primary btn-lg btn-block" ng-click="sendFunds()">Transfer</button>
             </div>
             <div id="inputs">
-                <h4>Wallet configuration:</h4>
-                <div class="row">
-                    <div class="col-md-3">
-                        <label>Required signatures</label>
-                        <select class="pull-right" id="selectM">
-                            <option id="1">1</option>
-                            <option id="2">2</option>
-                            <option id="3">3</option>
-                            <option id="4">4</option>
-                            <option id="5">5</option>
-                            <option id="6">6</option>
-                        </select><br>
-                        <label>Total Copayers</label>
-                        <select class="pull-right" id="selectN">
-                            <option id="1">1</option>
-                            <option id="2">2</option>
-                            <option id="3">3</option>
-                            <option id="4">4</option>
-                            <option id="5">5</option>
-                            <option id="6">6</option>
-                        </select><br>
-                        <label>Network</label>
-                        <select class="pull-right" id="selectNet">
-                            <option id="livenet">Livenet</option>
-                            <option id="testnet">Testnet</option>
-                        </select><br><br>
-                    </div>
+                <div class="panel">
+                  <h4>Wallet configuration:</h4>
+                  <div class="row">
+                      <div class="col-md-3">
+                          <label>Required signatures</label>
+                          <select class="pull-right" id="selectM">
+                              <option id="1">1</option>
+                              <option id="2">2</option>
+                              <option id="3">3</option>
+                              <option id="4">4</option>
+                              <option id="5">5</option>
+                              <option id="6">6</option>
+                          </select><br>
+                          <label>Total Copayers</label>
+                          <select class="pull-right" id="selectN">
+                              <option id="1">1</option>
+                              <option id="2">2</option>
+                              <option id="3">3</option>
+                              <option id="4">4</option>
+                              <option id="5">5</option>
+                              <option id="6">6</option>
+                          </select><br>
+                          <label>Network</label>
+                          <select class="pull-right" id="selectNet">
+                              <option id="livenet">Livenet</option>
+                              <option id="testnet">Testnet</option>
+                          </select>
+                      </div>
+                  </div>
                 </div>
-                <div class="form-group" id="block1">
-                    <label>Backup for copayer 1:</label>
-                    <div class="form-group" id="backup1">
+                <div class="form-group panel" id="block1">
+                  <div class="row m20b">
+                    <div class="form-group col-lg-6" id="backup1">
+                        <label>Backup for copayer 1:</label>
                         <input type="text" class="form-control" ng-model="backUp[1]" placeholder="Mnemonic or export wallet data">
                     </div>
-                    <div class="form-group" id="backupFile1">
+                    <div class="form-group col-lg-6" id="backupFile1">
                         <label>Or upload a file: </label>
-                        <input type="file" ng-model="file1" on-read-file="showContent($fileContent, 1)" accept="application/json, .txt" style="display: inline">
+                        <input type="file" ng-model="file1" on-read-file="showContent($fileContent, 1)" accept="application/json, .txt">
                     </div>
-                    <div class="form-group" id="password1">
+                  </div>
+                  <hr>
+                  <div class="row">
+                    <div class="form-group col-lg-6" id="password1">
                         <label>Password:</label>
                         <input type="password" class="form-control" ng-model="pass[1]">
                     </div>
-                    <div class="form-goup" id="passwordX1">
-                        <br>
+                    <div class="form-goup col-lg-6" id="passwordX1">
                         <label>Encrypted private key password (in case you have one):</label>
                         <input type="password" class="form-control" ng-model="passX[1]" id="passX1">
-                    </div><hr>
+                    </div>
+                  </div>
                 </div>
 
                 <div id="block2" style="display: none">
@@ -198,32 +213,15 @@
                         <input type="password" class="form-control" ng-model="passX[6]" id="passX6">
                     </div><hr>
                 </div>
-                <button class="btn btn-primary" ng-click="proccessInputs()">Scan wallet</button><br><br>
+                <button class="btn btn-primary btn-lg btn-block" ng-click="proccessInputs()">Scan wallet</button><br><br>
             </div>
             <div class="modal fade" id="myModal" data-backdrop="static" data-keyboard="false">
                 <div class="modal-dialog" style="position: absolute;display: block;top: 50%;left: 50%;">
                     <!-- Modal content-->
-                    <div class="hexdots-loader" ></div>    
+                    <div class="hexdots-loader" ></div>
                 </div>
-            </div>
-
-            <div id="successMessage" class="alert alert-success" style="display: none;">
-                {{successMessage}}
-            </div>
-            <div id="errorMessage" class="alert alert-danger" style="display: none;">
-                {{errorMessage}}
-            </div>
-            <div id="statusMessage" class="alert alert-info" style="display: none;">
-                {{statusMessage}}
             </div>
         </div>
     </body>
-    <footer class="page-footer">
-        <div id="back" style="display: none">
-            <ul>
-                <li><a href="http://bitpay.github.io/copay-recovery/">Back</a></li>
-            </ul>
-        </div>
-    </footer>
 </div>
 </html>
