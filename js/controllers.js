@@ -83,13 +83,13 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
 
     var rawTx;
     try {
-      rawTx = recoveryServices.createRawTx(toAddress, scanResults, wallet);
+      rawTx = recoveryServices.createRawTx(toAddress, scanResults, wallet, fee);
     } catch (ex) {
       return showMessage(ex.message, 3);
     }
 
     recoveryServices.txBroadcast(rawTx, network).then(function(response) {
-        showMessage((scanResults.balance - fee) + ' BTC sent to address: ' + toAddress, 2);
+        showMessage((scanResults.balance - fee).toFixed(8) + ' BTC sent to address: ' + toAddress, 2);
         console.log('Transaction complete.  ' + (scanResults.balance - fee) + ' BTC sent to address: ' + toAddress);
       },
       function(error) {

@@ -6,10 +6,10 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     var Transaction = bitcore.Transaction;
     var Address = bitcore.Address;
     var GAP = 20;
-    var fee = 10000;
     var root = {};
 
     root.fromBackup = function(data, m, n, network) {
+
       if (!data.backup)
         return null;
       try {
@@ -64,8 +64,8 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       var xPriv;
 
       try {
-        var m = new Mnemonic(words);
-        xPriv = m.toHDPrivateKey(passphrase, network).toString();
+        var mne = new Mnemonic(words);
+        xPriv = mne.toHDPrivateKey(passphrase, network).toString();
       } catch (ex) {
         throw new Error("Mnemonic wallet seed is not valid.");
       };
@@ -73,7 +73,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       var credential = {
         xPriv: xPriv,
         derivationStrategy: "BIP44",
-        addressType: "P2PKH",
+        addressType: n == 1 ? "P2PKH" : "P2SH",
         m: m,
         n: n,
         network: network,
@@ -165,7 +165,6 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       function derive(basePath, index, cb) {
         if (inactiveCount > GAP) return cb();
         var address = root.generateAddress(wallet, basePath, index);
-        console.log(address);
         root.getAddressData(address, wallet.network, function(err, addressData) {
           if (err) return cb(err);
 
@@ -184,6 +183,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     root.generateAddress = function(wallet, path, index) {
       var derivedPublicKeys = [];
       var derivedPrivateKeys = [];
+
       var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
 
       lodash.each(xPrivKeys, function(xpk) {
@@ -199,15 +199,14 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         var derivedPublicKey = derivedHdPublicKey.publicKey;
         derivedPublicKeys.push(derivedPublicKey);
       });
-
       var address;
+
       if (wallet.addressType == "P2SH")
-        address = bitcore.Address.createMultisig(derivedPublicKeys, wallet.n, wallet.network);
+        address = bitcore.Address.createMultisig(derivedPublicKeys, parseInt(wallet.m), wallet.network);
       else if (wallet.addressType == "P2PKH")
         address = Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
       else
         throw new Error('Address type not supported');
-
       return {
         addressObject: address,
         pubKeys: derivedPublicKeys,
@@ -219,7 +218,6 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     root.getAddressData = function(address, network, cb) {
       // call insight API to get address information
       root.checkAddress(address.addressObject, network).then(function(respAddress) {
-
         // call insight API to get utxo information
         root.checkUtxos(address.addressObject, network).then(function(respUtxo) {
 
@@ -256,11 +254,11 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         return $http.get('https://insight.bitpay.com/api/addr/' + address + '/utxo?noCache=1');
     }
 
-    root.createRawTx = function(toAddress, scanResults, wallet) {
+    root.createRawTx = function(toAddress, scanResults, wallet, fee) {
       if (!toAddress || !Address.isValid(toAddress))
         throw new Error('Please enter a valid address.');
 
-      var amount = parseInt((scanResults.balance * 1e8 - fee).toFixed(0));
+      var amount = parseInt((scanResults.balance * 1e8 - fee * 1e8).toFixed(0));
 
       if (amount <= 0)
         throw new Error('Funds are insufficient to complete the transaction');
@@ -278,7 +276,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
           if (address.utxo.length > 0) {
             lodash.each(address.utxo, function(u) {
               if (wallet.addressType == 'P2SH')
-                tx.from(u, address.pubKeys, wallet.m);
+                tx.from(u, address.pubKeys, parseInt(wallet.m));
               else
                 tx.from(u);
               privKeys = privKeys.concat(address.privKeys);
