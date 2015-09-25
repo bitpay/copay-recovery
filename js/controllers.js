@@ -18,11 +18,11 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
   $scope.pass = [];
 
   $('#selectM').change(function() {
-    m = $(this).find('option:selected').attr('id');
+    m = +$(this).find('option:selected').attr('id');
   });
 
   $('#selectN').change(function() {
-    n = $('#selectN').find('option:selected').attr('id');
+    n = +$('#selectN').find('option:selected').attr('id');
     $('#block1, #block2, #block3, #block4, #block5, #block6').hide();
 
     for (var i = 1; i <= n; i++)
@@ -72,9 +72,9 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
       // $("#myModal").modal();
 
       if ((scanResults.balance - fee) > 0)
-        $scope.totalBalance = "Available balance: " + scanResults.balance + " BTC";
+        $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC";
       else
-        $scope.totalBalance = "Available balance: " + scanResults.balance + " BTC. Insufficents to make a transaction.";
+        $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC. Insufficents to make a transaction.";
     });
   }
 

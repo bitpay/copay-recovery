@@ -64,8 +64,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       var xPriv;
 
       try {
-        var mne = new Mnemonic(words);
-        xPriv = mne.toHDPrivateKey(passphrase, network).toString();
+        xPriv = new Mnemonic(words).toHDPrivateKey(passphrase, network).toString();
       } catch (ex) {
         throw new Error("Mnemonic wallet seed is not valid.");
       };
@@ -200,9 +199,8 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         derivedPublicKeys.push(derivedPublicKey);
       });
       var address;
-
       if (wallet.addressType == "P2SH")
-        address = bitcore.Address.createMultisig(derivedPublicKeys, parseInt(wallet.m), wallet.network);
+        address = bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
       else if (wallet.addressType == "P2PKH")
         address = Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
       else
@@ -276,7 +274,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
           if (address.utxo.length > 0) {
             lodash.each(address.utxo, function(u) {
               if (wallet.addressType == 'P2SH')
-                tx.from(u, address.pubKeys, parseInt(wallet.m));
+                tx.from(u, address.pubKeys, wallet.m);
               else
                 tx.from(u);
               privKeys = privKeys.concat(address.privKeys);
