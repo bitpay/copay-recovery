@@ -44,7 +44,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     $('#inputs').show();
     $('#back').hide();
 
-    var inputs = lodash.map(lodash.range(1, m + 1), function(i) {
+    var inputs = lodash.map(lodash.range(1, n + 1), function(i) {
       return {
         backup: $scope.backUp[i] || '',
         password: $scope.pass[i] || '',
