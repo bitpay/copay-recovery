@@ -11,11 +11,10 @@
     <script type="text/javascript" src="bower_components/jquery/dist/jquery.js"></script>
     <script type="text/javascript" src="bower_components/ng-lodash/build/ng-lodash.min.js"></script>
     <script type="text/javascript" src="bower_components/bootstrap/dist/js/bootstrap.min.js"></script>
-    <link rel="stylesheet" href="http://css-spinners.com/css/spinner/hexdots.css" type="text/css">
+    <link rel="stylesheet" href="hexdots.css" type="text/css">
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="main.css"></link>
-    <script src="http://crypto-js.googlecode.com/svn/tags/3.1.2/build/rollups/md5.js"></script>
     <script type="text/javascript" src="js/services.js"></script>
     <script type="text/javascript" src="js/controllers.js"></script>
     <title>Copay recovery tool</title>
@@ -78,7 +77,12 @@
                           <select class="pull-right" id="selectNet">
                               <option id="livenet">Livenet</option>
                               <option id="testnet">Testnet</option>
-                          </select>
+                          </select><br>
+                          <label>Address Gap</label>
+                          <input  class="pull-right"  size="3" type="text" class="form-control" ng-model="gap">
+<span> 
+ (Usually does not need to be changed)
+</span>
                       </div>
                   </div>
                 </div>

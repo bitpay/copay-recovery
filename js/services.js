@@ -5,7 +5,6 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     var Mnemonic = require('bitcore-mnemonic');
     var Transaction = bitcore.Transaction;
     var Address = bitcore.Address;
-    var GAP = 20;
     var root = {};
 
     root.fromBackup = function(data, m, n, network) {
@@ -124,12 +123,12 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       },
     }
 
-    root.scanWallet = function(wallet, cb) {
+    root.scanWallet = function(wallet, inGap, cb) {
 
-      console.log("Getting addresses...");
+      console.log("Getting addresses... GAP:", inGap);
 
       // getting main addresses
-      root.getActiveAddresses(wallet, function(err, addresses) {
+      root.getActiveAddresses(wallet, inGap, function(err, addresses) {
         if (err) return cb(err);
         var utxos = lodash.flatten(lodash.pluck(addresses, "utxo"));
         var result = {
@@ -147,10 +146,11 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         return PATHS[wallet.derivationStrategy][wallet.network];
     }
 
-    root.getActiveAddresses = function(wallet, cb) {
+    root.getActiveAddresses = function(wallet, inGap, cb) {
       var activeAddress = [];
       var paths = root.getPaths(wallet);
       var inactiveCount;
+      var gap = lodash.isNumber(inGap) ? inGap : 20;
 
       function explorePath(i) {
         if (i >= paths.length) return cb(null, activeAddress);
@@ -162,7 +162,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       }
 
       function derive(basePath, index, cb) {
-        if (inactiveCount > GAP) return cb();
+        if (inactiveCount > gap) return cb();
         var address = root.generateAddress(wallet, basePath, index);
         root.getAddressData(address, wallet.network, function(err, addressData) {
           if (err) return cb(err);
