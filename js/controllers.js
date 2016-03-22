@@ -16,6 +16,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
   $scope.backUp = [];
   $scope.passX = [];
   $scope.pass = [];
+  $scope.gap = 20;
 
   $('#selectM').change(function() {
     m = +$(this).find('option:selected').attr('id');
@@ -59,7 +60,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     }
     showMessage('Scanning funds...', 1);
 
-    recoveryServices.scanWallet(wallet, function(err, res) {
+    recoveryServices.scanWallet(wallet, $scope.gap || 20,  function(err, res) {
       scanResults = res;
       if (err)
         return showMessage(err, 3);
