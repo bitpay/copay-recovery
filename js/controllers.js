@@ -39,7 +39,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
   }
 
   $scope.proccessInputs = function() {
-    // $("#myModal").modal();
+    $("#myModal").modal('show');
     hideMessage();
     $("#sendBlock").hide();
     $('#inputs').show();
@@ -70,7 +70,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
       $('#sendBlock').show();
       $("#button2").show();
       $("#back").show();
-      // $("#myModal").modal();
+      $("#myModal").modal('hide');
 
       if ((scanResults.balance - fee) > 0)
         $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC";
