@@ -60,7 +60,11 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     }
     showMessage('Scanning funds...', 1);
 
-    recoveryServices.scanWallet(wallet, $scope.gap || 20,  function(err, res) {
+    var reportFn = function(data) {
+      console.log('Report:', data);
+    };
+
+    recoveryServices.scanWallet(wallet, $scope.gap || 20, reportFn, function(err, res) {
       scanResults = res;
       if (err)
         return showMessage(err, 3);
