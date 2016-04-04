@@ -123,12 +123,13 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       },
     }
 
-    root.scanWallet = function(wallet, inGap, cb) {
+    root.scanWallet = function(wallet, inGap, reportFn, cb) {
 
-      console.log("Getting addresses... GAP:", inGap);
+      reportFn("Getting addresses... GAP:", inGap);
 
       // getting main addresses
-      root.getActiveAddresses(wallet, inGap, function(err, addresses) {
+      root.getActiveAddresses(wallet, inGap, reportFn, function(err, addresses) {
+        reportFn("Active addresses:" + JSON.stringify(addresses));
         if (err) return cb(err);
         var utxos = lodash.flatten(lodash.pluck(addresses, "utxo"));
         var result = {
@@ -146,7 +147,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         return PATHS[wallet.derivationStrategy][wallet.network];
     }
 
-    root.getActiveAddresses = function(wallet, inGap, cb) {
+    root.getActiveAddresses = function(wallet, inGap, reportFn, cb) {
       var activeAddress = [];
       var paths = root.getPaths(wallet);
       var inactiveCount;
@@ -164,14 +165,18 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       function derive(basePath, index, cb) {
         if (inactiveCount > gap) return cb();
         var address = root.generateAddress(wallet, basePath, index);
+        reportFn('Exploring Address:' + JSON.stringify(address));
         root.getAddressData(address, wallet.network, function(err, addressData) {
           if (err) return cb(err);
 
           if (!lodash.isEmpty(addressData)) {
+            reportFn('Address is Active!');
             activeAddress.push(addressData);
             inactiveCount = 0;
           } else
             inactiveCount++;
+
+          reportFn('inactiveCount:' + inactiveCount);
 
           derive(basePath, index + 1, cb);
         });
