@@ -56,6 +56,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     try {
       wallet = recoveryServices.getWallet(inputs, m, n, network);
     } catch (ex) {
+      $("#myModal").modal('hide');
       return showMessage(ex.message, 3);
     }
     showMessage('Scanning funds...', 1);
@@ -64,7 +65,9 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
       console.log('Report:', data);
     };
 
-    recoveryServices.scanWallet(wallet, $scope.gap || 20, reportFn, function(err, res) {
+    var gap = +($("#gap").val());
+    gap = lodash.isNumber(gap) ? gap : 20;
+    recoveryServices.scanWallet(wallet, gap, reportFn, function(err, res) {
       scanResults = res;
       if (err)
         return showMessage(err, 3);
