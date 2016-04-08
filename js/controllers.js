@@ -79,7 +79,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
       if ((scanResults.balance - fee) > 0)
         $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC";
       else
-        $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC. Insufficents to make a transaction.";
+        $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC. Insufficents funds.";
     });
   }
 
