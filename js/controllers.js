@@ -5,33 +5,20 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
   var fee = 0.0001;
   var mainAddressObjects = [];
   var changeAddressObjects = [];
-
-  var m = +$('#selectM').find('option:selected').attr('id');
-  var n = +$('#selectN').find('option:selected').attr('id');
-  var network = $('#selectNet').find('option:selected').attr('id');
-
-  $rootScope.$on('progress', function(name, data) {
-    console.log(data);
-  });
+  $scope.isSearching = true;
+  $scope.availableOptions = [1, 2, 3, 4, 5, 6];
+  $scope.availableNetworks = ['livenet', 'testnet'];
+  $scope.data = {};
+  $scope.data.m = $scope.availableOptions[0];
+  $scope.data.n = $scope.availableOptions[0];
+  $scope.data.net = $scope.availableNetworks[0];
+  $scope.data.gap = 20;
   $scope.backUp = [];
   $scope.passX = [];
   $scope.pass = [];
-  $scope.gap = 20;
 
-  $('#selectM').change(function() {
-    m = +$(this).find('option:selected').attr('id');
-  });
-
-  $('#selectN').change(function() {
-    n = +$('#selectN').find('option:selected').attr('id');
-    $('#block1, #block2, #block3, #block4, #block5, #block6').hide();
-
-    for (var i = 1; i <= n; i++)
-      $('#block' + i).show();
-  });
-
-  $('#selectNet').change(function() {
-    network = $(this).find('option:selected').attr('id');
+  $rootScope.$on('progress', function(name, data) {
+    console.log(data);
   });
 
   $scope.showContent = function($fileContent, index) {
@@ -40,12 +27,9 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
 
   $scope.proccessInputs = function() {
     $("#myModal").modal('show');
-    hideMessage();
-    $("#sendBlock").hide();
-    $('#inputs').show();
-    $('#back').hide();
+    $scope.isSearching = true;
 
-    var inputs = lodash.map(lodash.range(1, n + 1), function(i) {
+    var inputs = lodash.map(lodash.range(1, $scope.data.n + 1), function(i) {
       return {
         backup: $scope.backUp[i] || '',
         password: $scope.pass[i] || '',
@@ -54,7 +38,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     });
 
     try {
-      wallet = recoveryServices.getWallet(inputs, m, n, network);
+      wallet = recoveryServices.getWallet(inputs, $scope.data.m, $scope.data.n, $scope.data.net);
     } catch (ex) {
       $("#myModal").modal('hide');
       return showMessage(ex.message, 3);
@@ -65,7 +49,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
       console.log('Report:', data);
     };
 
-    var gap = +($("#gap").val());
+    var gap = $scope.data.gap;
     gap = lodash.isNumber(gap) ? gap : 20;
     recoveryServices.scanWallet(wallet, gap, reportFn, function(err, res) {
       scanResults = res;
@@ -73,11 +57,8 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
         return showMessage(err, 3);
 
       showMessage('Search completed', 2);
-      $('#inputs').hide();
-      $('#sendBlock').show();
-      $("#button2").show();
-      $("#back").show();
       $("#myModal").modal('hide');
+      $scope.isSearching = false;
 
       if ((scanResults.balance - fee) > 0)
         $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC";
@@ -105,33 +86,25 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
       });
   };
 
-  function hideMessage() {
-    $('#errorMessage').hide();
-    $('#successMessage').hide();
-    $('#statusMessage').hide();
-  }
-
   function showMessage(message, type) {
     /*
 			1 = status
 			2 = success
 			3 = error
 		*/
+
     if (type == 1) {
       $scope.statusMessage = message;
-      $('#statusMessage').show();
-      $('#errorMessage').hide();
-      $('#successMessage').hide();
+      $scope.successMessage = null;
+      $scope.errorMessage = null;
     } else if (type == 2) {
       $scope.successMessage = message;
-      $('#successMessage').show();
-      $('#errorMessage').hide();
-      $('#statusMessage').hide();
+      $scope.statusMessage = null;
+      $scope.errorMessage = null;
     } else if (type == 3) {
       $scope.errorMessage = message;
-      $('#errorMessage').show();
-      $('#successMessage').hide();
-      $('#statusMessage').hide();
+      $scope.statusMessage = null;
+      $scope.successMessage = null;
     }
   }
 });

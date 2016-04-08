@@ -28,19 +28,19 @@
         </div>
     </header>
     <div class="container">
-      <div id="successMessage" class="alert alert-success" style="display: none;">
+      <div ng-show="successMessage" class="alert alert-success">
           {{successMessage}}
       </div>
-      <div id="errorMessage" class="alert alert-danger" style="display: none;">
+      <div ng-show="errorMessage" class="alert alert-danger">
           {{errorMessage}}
       </div>
-      <div id="statusMessage" class="alert alert-info" style="display: none;">
+      <div ng-show="statusMessage" class="alert alert-info">
           {{statusMessage}}
       </div>
     </div>
     <body ng-controller="recoveryController">
         <div class="container">
-            <div id="sendBlock" style="display: none;">
+            <div ng-if="!isSearching">
                 <div class="form-group panel">
                     <label>{{totalBalance}}</label>
                     <div class="input-group">
@@ -50,43 +50,28 @@
                 </div>
                 <button class="btn btn-primary btn-lg btn-block" ng-click="sendFunds()">Transfer</button>
             </div>
-            <div id="inputs">
+            <div ng-if="isSearching">
                 <div class="panel">
                   <h4>Wallet configuration:</h4>
                   <div class="row">
                       <div class="col-md-3">
                           <label>Required signatures</label>
-                          <select class="pull-right" id="selectM">
-                              <option id="1">1</option>
-                              <option id="2">2</option>
-                              <option id="3">3</option>
-                              <option id="4">4</option>
-                              <option id="5">5</option>
-                              <option id="6">6</option>
-                          </select><br>
+                          <select class="pull-right" ng-model="data.m" ng-options="option as option for option in availableOptions track by option"></select>
+                          <br>
                           <label>Total Copayers</label>
-                          <select class="pull-right" id="selectN">
-                              <option id="1">1</option>
-                              <option id="2">2</option>
-                              <option id="3">3</option>
-                              <option id="4">4</option>
-                              <option id="5">5</option>
-                              <option id="6">6</option>
-                          </select><br>
+                          <select class="pull-right" ng-model="data.n" ng-options="option as option for option in availableOptions track by option">></select>
+                          <br>
                           <label>Network</label>
-                          <select class="pull-right" id="selectNet">
-                              <option id="livenet">Livenet</option>
-                              <option id="testnet">Testnet</option>
-                          </select><br>
+                          <select class="pull-right" ng-model="data.net" ng-options="option as option for option in availableNetworks track by option">></select>
+                          <br>
                           <label>Address Gap</label>
-                          <input  class="pull-right"  size="3" type="text" class="form-control" id="gap" ng-model="gap">
-<span> 
- (Usually does not need to be changed)
-</span>
+                          <input  class="pull-right"  size="3" type="text" class="form-control" id="gap" ng-model="data.gap">
+                          <span>(Usually does not need to be changed)</span>
+                          <br>
                       </div>
                   </div>
                 </div>
-                <div class="form-group panel" id="block1">
+                <div class="form-group panel" ng-if="data.n >= 1">
                   <div class="row">
                     <div class="form-group col-lg-6" id="backup1">
                         <label>Backup for copayer 1:</label>
@@ -110,7 +95,7 @@
                   </div>
                 </div>
 
-                <div class="form-group panel" id="block2" style="display: none;">
+                <div class="form-group panel" ng-if="data.n >= 2">
                   <div class="row">
                     <div class="form-group col-lg-6" id="backup2">
                         <label>Backup for copayer 2:</label>
@@ -134,7 +119,7 @@
                   </div>
                 </div>
 
-                <div class="form-group panel" id="block3" style="display: none;">
+                <div class="form-group panel" ng-if="data.n >= 3">
                   <div class="row">
                     <div class="form-group col-lg-6" id="backup3">
                         <label>Backup for copayer 3:</label>
@@ -158,7 +143,7 @@
                   </div>
                 </div>
 
-                <div class="form-group panel" id="block4" style="display: none;">
+                <div class="form-group panel" ng-if="data.n >= 4">
                   <div class="row">
                     <div class="form-group col-lg-6" id="backup4">
                         <label>Backup for copayer 4:</label>
@@ -182,7 +167,7 @@
                   </div>
                 </div>
 
-                <div class="form-group panel" id="block5" style="display: none;">
+                <div class="form-group panel" ng-if="data.n >= 5">
                   <div class="row">
                     <div class="form-group col-lg-6" id="backup5">
                         <label>Backup for copayer 5:</label>
@@ -206,7 +191,7 @@
                   </div>
                 </div>
 
-                <div class="form-group panel" id="block6" style="display: none;">
+                <div class="form-group panel" ng-if="data.n >= 6">
                   <div class="row">
                     <div class="form-group col-lg-6" id="backup6">
                         <label>Backup for copayer 6:</label>
