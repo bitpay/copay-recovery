@@ -8,7 +8,7 @@ Get the source code:
 
 Open index.html in your browser
 
-## Public Instalation
+## Public Installation
 
 There is a public install of this software hosted at github at: 
 https://bitpay.github.io/copay-recovery/
