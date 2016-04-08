@@ -5,35 +5,42 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
   var fee = 0.0001;
   var mainAddressObjects = [];
   var changeAddressObjects = [];
-  $scope.isSearching = true;
+  $scope.beforeScan = true;
   $scope.availableOptions = [1, 2, 3, 4, 5, 6];
   $scope.availableNetworks = ['livenet', 'testnet'];
+  $scope.copayers = [1];
   $scope.data = {};
   $scope.data.m = $scope.availableOptions[0];
   $scope.data.n = $scope.availableOptions[0];
   $scope.data.net = $scope.availableNetworks[0];
   $scope.data.gap = 20;
-  $scope.backUp = [];
-  $scope.passX = [];
-  $scope.pass = [];
+  $scope.data.backUp = [];
+  $scope.data.passX = [];
+  $scope.data.pass = [];
 
   $rootScope.$on('progress', function(name, data) {
     console.log(data);
   });
 
+  $scope.change = function() {
+    $scope.copayers = lodash.map(lodash.range(1, $scope.data.n + 1), function(i) {
+      return i;
+    });
+  }
+
   $scope.showContent = function($fileContent, index) {
-    $scope.backUp[index] = $fileContent;
+    $scope.data.backUp[index] = $fileContent;
   }
 
   $scope.proccessInputs = function() {
     $("#myModal").modal('show');
-    $scope.isSearching = true;
+    $scope.beforeScan = true;
 
     var inputs = lodash.map(lodash.range(1, $scope.data.n + 1), function(i) {
       return {
-        backup: $scope.backUp[i] || '',
-        password: $scope.pass[i] || '',
-        xPrivPass: $scope.passX[i] || '',
+        backup: $scope.data.backUp[i] || '',
+        password: $scope.data.pass[i] || '',
+        xPrivPass: $scope.data.passX[i] || '',
       }
     });
 
@@ -49,8 +56,9 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
       console.log('Report:', data);
     };
 
-    var gap = $scope.data.gap;
-    gap = lodash.isNumber(gap) ? gap : 20;
+    var gap = +$scope.data.gap;
+    gap = gap ? gap : 20;
+
     recoveryServices.scanWallet(wallet, gap, reportFn, function(err, res) {
       scanResults = res;
       if (err)
@@ -58,7 +66,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
 
       showMessage('Search completed', 2);
       $("#myModal").modal('hide');
-      $scope.isSearching = false;
+      $scope.beforeScan = false;
 
       if ((scanResults.balance - fee) > 0)
         $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC";
