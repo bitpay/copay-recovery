@@ -163,7 +163,6 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       function derive(basePath, index, cb) {
         if (inactiveCount > inGap) return cb();
         var address = root.generateAddress(wallet, basePath, index);
-        reportFn('Exploring Address:' + JSON.stringify(address));
         root.getAddressData(address, wallet.network, function(err, addressData) {
           if (err) return cb(err);
 
@@ -221,22 +220,19 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       root.checkAddress(address.addressObject, network).then(function(respAddress) {
         // call insight API to get utxo information
         root.checkUtxos(address.addressObject, network).then(function(respUtxo) {
-
-          var addressData = {};
-
-          if (respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0) {
-            addressData = {
-              address: respAddress.data.addrStr,
-              balance: respAddress.data.balance,
-              unconfirmedBalance: respAddress.data.unconfirmedBalance,
-              utxo: respUtxo.data,
-              privKeys: address.privKeys,
-              pubKeys: address.pubKeys,
-              path: address.path
-            };
-          }
+          var addressData = {
+            address: respAddress.data.addrStr,
+            balance: respAddress.data.balance,
+            unconfirmedBalance: respAddress.data.unconfirmedBalance,
+            utxo: respUtxo.data,
+            privKeys: address.privKeys,
+            pubKeys: address.pubKeys,
+            path: address.path
+          };
           $rootScope.$emit('progress', addressData);
-          return cb(null, addressData);
+          if (respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0)
+            return cb(null, addressData);
+          return cb();
         });
       });
     }
