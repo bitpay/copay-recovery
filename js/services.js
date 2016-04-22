@@ -102,6 +102,9 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         if (lodash.uniq(lodash.compact(lodash.pluck(result.copayers, 'copayerId'))).length != result.copayers.length)
           throw new Error("Some of the backups belong to the same copayers");
       }
+
+      console.log('Recovering wallet', result);
+
       return result;
     }
 
@@ -125,6 +128,14 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
 
     root.scanWallet = function(wallet, inGap, reportFn, cb) {
       reportFn("Getting addresses... GAP:" + inGap);
+
+      var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
+      var path = root.getPaths(wallet)[0];
+      var hardenedPath = path.substring(0, path.lastIndexOf("'") + 1);
+      var xPubKeys = lodash.map(xPrivKeys, function(xpk) {
+        return bitcore.HDPrivateKey(xpk).derive(hardenedPath).hdPublicKey;
+      });
+      console.log('Derived xpubs (path ' + hardenedPath + '): ', lodash.pluck(xPubKeys, 'xpubkey'));
 
       // getting main addresses
       root.getActiveAddresses(wallet, inGap, reportFn, function(err, addresses) {
@@ -182,8 +193,8 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     }
 
     root.generateAddress = function(wallet, path, index) {
-      var derivedPublicKeys = [];
       var derivedPrivateKeys = [];
+      var derivedPublicKeys = [];
 
       var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
 
@@ -200,6 +211,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         var derivedPublicKey = derivedHdPublicKey.publicKey;
         derivedPublicKeys.push(derivedPublicKey);
       });
+
       var address;
       if (wallet.addressType == "P2SH")
         address = bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
@@ -227,10 +239,11 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
             utxo: respUtxo.data,
             privKeys: address.privKeys,
             pubKeys: address.pubKeys,
-            path: address.path
+            path: address.path,
+            isActive: respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0,
           };
-          $rootScope.$emit('progress', addressData);
-          if (respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0)
+          $rootScope.$emit('progress', lodash.pick(addressData, 'path', 'address', 'isActive', 'balance'));
+          if (addressData.isActive)
             return cb(null, addressData);
           return cb();
         });
