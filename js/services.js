@@ -302,7 +302,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         return rawTx;
       } catch (ex) {
         console.log(ex);
-        throw new Error('Could not build tx', ex);
+        throw new Error('Could not build tx: ' + ex);
       }
     }
 
