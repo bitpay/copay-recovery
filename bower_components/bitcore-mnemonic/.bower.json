@@ -34,8 +34,7 @@
     "tag": "v0.13.2",
     "commit": "18ac41d9b07620b609ee36aea7ff0d3afecf335a"
   },
-  "_source": "git://github.com/bitpay/bitcore-mnemonic.git",
-  "_target": "~0.13.2",
-  "_originalSource": "bitcore-mnemonic",
-  "_direct": true
+  "_source": "https://github.com/bitpay/bitcore-mnemonic.git",
+  "_target": "0.13.2",
+  "_originalSource": "bitcore-mnemonic"
 }
