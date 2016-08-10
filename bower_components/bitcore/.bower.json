@@ -33,7 +33,7 @@
     "tag": "v0.13.1",
     "commit": "4834aa32ff51ca8ec14c273ef1378b6c6f374a4c"
   },
-  "_source": "git://github.com/bitpay/bitcore.git",
+  "_source": "https://github.com/bitpay/bitcore.git",
   "_target": "0.13.1",
   "_originalSource": "bitcore"
 }
