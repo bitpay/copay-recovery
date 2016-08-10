@@ -75,8 +75,8 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     });
   }
 
-  $scope.sendFunds = function() {
-    var toAddress = $scope.addr;
+  $scope.sendFunds = function(addr) {
+    var toAddress = addr;
 
     var rawTx;
     try {

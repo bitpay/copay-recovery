@@ -37,7 +37,7 @@
     "tag": "0.2.3",
     "commit": "0f144f0f9b1884a6d0ae9de5db91d8f7354e30ee"
   },
-  "_source": "git://github.com/rockabox/ng-lodash.git",
+  "_source": "https://github.com/rockabox/ng-lodash.git",
   "_target": "0.2.3",
   "_originalSource": "ng-lodash"
 }
