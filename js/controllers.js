@@ -85,7 +85,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
       return showMessage(ex.message, 3);
     }
 
-    recoveryServices.txBroadcast(rawTx, network).then(function(response) {
+    recoveryServices.txBroadcast(rawTx, $scope.data.net).then(function(response) {
         showMessage((scanResults.balance - fee).toFixed(8) + ' BTC sent to address: ' + toAddress, 2);
         console.log('Transaction complete.  ' + (scanResults.balance - fee) + ' BTC sent to address: ' + toAddress);
       },
