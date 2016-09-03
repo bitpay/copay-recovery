@@ -35,7 +35,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       var xPriv = payload.xPrivKey;
       if (payload.xPrivKeyEncrypted) {
         try {
-          xPriv = sjcl.decrypt(di.passwordX, payload.xPrivKeyEncrypted);
+          xPriv = sjcl.decrypt(data.xPrivPass, payload.xPrivKeyEncrypted);
         } catch (ex) {
           throw new Error("Can not decrypt private key");
         }
