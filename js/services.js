@@ -26,7 +26,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       payload = JSON.parse(payload);
       
       if (!payload.n) {
-        throw new Error("Backup format not recognized. If you are using a Copay *Beta* backup and version is older than 0.10, please see: https://github.com/bitpay/copay/issues/4730#issuecomment-244522614");
+        throw new Error("Backup format not recognized. If you are using a Copay Beta backup and version is older than 0.10, please see: https://github.com/bitpay/copay/issues/4730#issuecomment-244522614");
       }
       if ((payload.m != m) || (payload.n != n)) {
         throw new Error("The wallet configuration (m-n) does not match with values provided.");
