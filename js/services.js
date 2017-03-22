@@ -134,14 +134,6 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     root.scanWallet = function(wallet, inGap, reportFn, cb) {
       reportFn("Getting addresses... GAP:" + inGap);
 
-      var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
-      var path = root.getPaths(wallet)[0];
-      var hardenedPath = path.substring(0, path.lastIndexOf("'") + 1);
-      var xPubKeys = lodash.map(xPrivKeys, function(xpk) {
-        return bitcore.HDPrivateKey(xpk).derive(hardenedPath).hdPublicKey;
-      });
-      console.log('Derived xpubs (path ' + hardenedPath + '): ', lodash.pluck(xPubKeys, 'xpubkey'));
-
       // getting main addresses
       root.getActiveAddresses(wallet, inGap, reportFn, function(err, addresses) {
         reportFn("Active addresses:" + JSON.stringify(addresses));
@@ -163,13 +155,6 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     };
 
     root.getHdDerivations = function(wallet) {
-      function getPaths() {
-        if (wallet.derivationStrategy == 'BIP45')
-          return PATHS[wallet.derivationStrategy];
-        if (wallet.derivationStrategy == 'BIP44')
-          return PATHS[wallet.derivationStrategy][wallet.network];
-      };
-
       function deriveOne(xpriv, path, compliant) {
         var hdPrivateKey = bitcore.HDPrivateKey(xpriv);
         var xPrivKey = compliant ? hdPrivateKey.deriveChild(path) : hdPrivateKey.deriveNonCompliantChild(path);
@@ -194,7 +179,8 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
 
       var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
       var derivations = [];
-      lodash.each(getPaths(), function(path) {
+      var paths = [];
+      lodash.each(this.getPaths(wallet), function(path) {
         var derivation = expand(lodash.map(xPrivKeys, function(xpriv) {
           var compliant = deriveOne(xpriv, path, true);
           var nonCompliant = deriveOne(xpriv, path, false);
@@ -205,29 +191,36 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
           }
         }));
         derivations = derivations.concat(derivation);
+        paths = paths.concat(lodash.times(derivation.length, lodash.constant(path)));
       });
 
-      return derivations;
+      return {
+        paths: paths,
+        derivations: derivations
+      };
     };
 
     root.getActiveAddresses = function(wallet, inGap, reportFn, cb) {
       var activeAddress = [];
       var inactiveCount;
 
-      var baseDerivations = this.getHdDerivations(wallet);
+      var hdData = this.getHdDerivations(wallet);
+      var baseDerivations = hdData.derivations;
+      var paths = hdData.paths;
 
       function exploreDerivation(i) {
         if (i >= baseDerivations.length) return cb(null, activeAddress);
         inactiveCount = 0;
-        derive(baseDerivations[i], 0, function(err, addresses) {
+        derive(baseDerivations[i], paths[i], 0, function(err, addresses) {
           if (err) return cb(err);
           exploreDerivation(i + 1);
         });
       }
 
-      function derive(baseDerivation, index, cb) {
+      function derive(baseDerivation, path, index, cb) {
         if (inactiveCount > inGap) return cb();
-        var address = root.generateAddress(wallet, baseDerivation, index);
+
+        var address = root.generateAddress(wallet, baseDerivation, path, index);
         root.getAddressData(address, wallet.network, function(err, addressData) {
           if (err) return cb(err);
 
@@ -240,13 +233,13 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
 
           reportFn('inactiveCount:' + inactiveCount);
 
-          derive(baseDerivation, index + 1, cb);
+          derive(baseDerivation, path, index + 1, cb);
         });
       }
       exploreDerivation(0);
     }
 
-    root.generateAddress = function(wallet, xPrivKeys, index) {
+    root.generateAddress = function(wallet, xPrivKeys, path, index) {
       var derivedPrivateKeys = [];
       var derivedPublicKeys = [];
 
@@ -272,7 +265,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         addressObject: address,
         pubKeys: derivedPublicKeys,
         privKeys: derivedPrivateKeys,
-        path: index
+        path: path + '/' + index,
       };
     }
 
