@@ -243,7 +243,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       var derivedPrivateKeys = [];
       var derivedPublicKeys = [];
 
-      lodash.each(xPrivKeys, function(xpk) {
+      lodash.each([].concat(xPrivKeys), function(xpk) {
         var hdPrivateKey = bitcore.HDPrivateKey(xpk);
 
         // private key derivation
