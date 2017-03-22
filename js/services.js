@@ -179,48 +179,52 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
 
       var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
       var derivations = [];
-      var paths = [];
       lodash.each(this.getPaths(wallet), function(path) {
-        var derivation = expand(lodash.map(xPrivKeys, function(xpriv) {
+        var derivation = expand(lodash.map(xPrivKeys, function(xpriv, i) {
           var compliant = deriveOne(xpriv, path, true);
           var nonCompliant = deriveOne(xpriv, path, false);
-          if (compliant.toString() == nonCompliant.toString()) {
-            return [compliant];
-          } else {
-            return [compliant, nonCompliant];
+          var items = [];
+          items.push({
+            copayer: i + 1,
+            path: path,
+            compliant: true,
+            key: compliant
+          });
+          if (compliant.toString() != nonCompliant.toString()) {
+            items.push({
+              copayer: i + 1,
+              path: path,
+              compliant: false,
+              key: nonCompliant
+            });
           }
+          return items;
         }));
         derivations = derivations.concat(derivation);
-        paths = paths.concat(lodash.times(derivation.length, lodash.constant(path)));
       });
 
-      return {
-        paths: paths,
-        derivations: derivations
-      };
+      return derivations;
     };
 
     root.getActiveAddresses = function(wallet, inGap, reportFn, cb) {
       var activeAddress = [];
       var inactiveCount;
 
-      var hdData = this.getHdDerivations(wallet);
-      var baseDerivations = hdData.derivations;
-      var paths = hdData.paths;
+      var baseDerivations = this.getHdDerivations(wallet);
 
       function exploreDerivation(i) {
         if (i >= baseDerivations.length) return cb(null, activeAddress);
         inactiveCount = 0;
-        derive(baseDerivations[i], paths[i], 0, function(err, addresses) {
+        derive(baseDerivations[i], 0, function(err, addresses) {
           if (err) return cb(err);
           exploreDerivation(i + 1);
         });
       }
 
-      function derive(baseDerivation, path, index, cb) {
+      function derive(baseDerivation, index, cb) {
         if (inactiveCount > inGap) return cb();
 
-        var address = root.generateAddress(wallet, baseDerivation, path, index);
+        var address = root.generateAddress(wallet, baseDerivation, index);
         root.getAddressData(address, wallet.network, function(err, addressData) {
           if (err) return cb(err);
 
@@ -233,18 +237,18 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
 
           reportFn('inactiveCount:' + inactiveCount);
 
-          derive(baseDerivation, path, index + 1, cb);
+          derive(baseDerivation, index + 1, cb);
         });
       }
       exploreDerivation(0);
     }
 
-    root.generateAddress = function(wallet, xPrivKeys, path, index) {
+    root.generateAddress = function(wallet, derivedItems, index) {
       var derivedPrivateKeys = [];
       var derivedPublicKeys = [];
 
-      lodash.each([].concat(xPrivKeys), function(xpk) {
-        var hdPrivateKey = bitcore.HDPrivateKey(xpk);
+      lodash.each([].concat(derivedItems), function(item) {
+        var hdPrivateKey = bitcore.HDPrivateKey(item.key);
 
         // private key derivation
         var derivedPrivateKey = hdPrivateKey.derive(index).privateKey;
@@ -265,7 +269,8 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         addressObject: address,
         pubKeys: derivedPublicKeys,
         privKeys: derivedPrivateKeys,
-        path: path + '/' + index,
+        info: derivedItems,
+        index: index,
       };
     }
 
@@ -281,10 +286,11 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
             utxo: respUtxo.data,
             privKeys: address.privKeys,
             pubKeys: address.pubKeys,
-            path: address.path,
+            info: address.info,
+            index: address.index,
             isActive: respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0,
           };
-          $rootScope.$emit('progress', lodash.pick(addressData, 'path', 'address', 'isActive', 'balance'));
+          $rootScope.$emit('progress', lodash.pick(addressData, 'info', 'index', 'address', 'isActive', 'balance'));
           if (addressData.isActive)
             return cb(null, addressData);
           return cb();
