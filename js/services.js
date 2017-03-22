@@ -1,7 +1,7 @@
 var app = angular.module("recoveryApp.services", ['ngLodash']);
 app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
   function($rootScope, $http, lodash) {
-    var bitcore = require('bitcore');
+    var bitcore = require('bitcore-lib');
     var Mnemonic = require('bitcore-mnemonic');
     var Transaction = bitcore.Transaction;
     var Address = bitcore.Address;
@@ -22,9 +22,9 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
       } catch (ex) {
         throw new Error("Incorrect backup password");
       };
-      
+
       payload = JSON.parse(payload);
-      
+
       if (!payload.n) {
         throw new Error("Backup format not recognized. If you are using a Copay Beta backup and version is older than 0.10, please see: https://github.com/bitpay/copay/issues/4730#issuecomment-244522614");
       }
@@ -124,23 +124,15 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
     }
 
     var PATHS = {
-      'BIP45': ["m/45'/2147483647/0/", "m/45'/2147483647/1/"],
+      'BIP45': ["m/45'/2147483647/0", "m/45'/2147483647/1"],
       'BIP44': {
-        'testnet': ["m/44'/1'/0'/0/", "m/44'/1'/0'/1/"],
-        'livenet': ["m/44'/0'/0'/0/", "m/44'/0'/0'/1/"]
+        'testnet': ["m/44'/1'/0'/0", "m/44'/1'/0'/1"],
+        'livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1"]
       },
     }
 
     root.scanWallet = function(wallet, inGap, reportFn, cb) {
       reportFn("Getting addresses... GAP:" + inGap);
-
-      var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
-      var path = root.getPaths(wallet)[0];
-      var hardenedPath = path.substring(0, path.lastIndexOf("'") + 1);
-      var xPubKeys = lodash.map(xPrivKeys, function(xpk) {
-        return bitcore.HDPrivateKey(xpk).derive(hardenedPath).hdPublicKey;
-      });
-      console.log('Derived xpubs (path ' + hardenedPath + '): ', lodash.pluck(xPubKeys, 'xpubkey'));
 
       // getting main addresses
       root.getActiveAddresses(wallet, inGap, reportFn, function(err, addresses) {
@@ -160,25 +152,79 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         return PATHS[wallet.derivationStrategy];
       if (wallet.derivationStrategy == 'BIP44')
         return PATHS[wallet.derivationStrategy][wallet.network];
-    }
+    };
+
+    root.getHdDerivations = function(wallet) {
+      function deriveOne(xpriv, path, compliant) {
+        var hdPrivateKey = bitcore.HDPrivateKey(xpriv);
+        var xPrivKey = compliant ? hdPrivateKey.deriveChild(path) : hdPrivateKey.deriveNonCompliantChild(path);
+        return xPrivKey;
+      };
+
+      function expand(groups) {
+        if (groups.length == 1) return groups[0];
+
+        function combine(g1, g2) {
+          var combinations = [];
+          for (var i = 0; i < g1.length; i++) {
+            for (var j = 0; j < g2.length; j++) {
+              combinations.push(lodash.flatten([g1[i], g2[j]]));
+            };
+          };
+          return combinations;
+        };
+
+        return combine(groups[0], expand(lodash.tail(groups)));
+      };
+
+      var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
+      var derivations = [];
+      lodash.each(this.getPaths(wallet), function(path) {
+        var derivation = expand(lodash.map(xPrivKeys, function(xpriv, i) {
+          var compliant = deriveOne(xpriv, path, true);
+          var nonCompliant = deriveOne(xpriv, path, false);
+          var items = [];
+          items.push({
+            copayer: i + 1,
+            path: path,
+            compliant: true,
+            key: compliant
+          });
+          if (compliant.toString() != nonCompliant.toString()) {
+            items.push({
+              copayer: i + 1,
+              path: path,
+              compliant: false,
+              key: nonCompliant
+            });
+          }
+          return items;
+        }));
+        derivations = derivations.concat(derivation);
+      });
+
+      return derivations;
+    };
 
     root.getActiveAddresses = function(wallet, inGap, reportFn, cb) {
       var activeAddress = [];
-      var paths = root.getPaths(wallet);
       var inactiveCount;
 
-      function explorePath(i) {
-        if (i >= paths.length) return cb(null, activeAddress);
+      var baseDerivations = this.getHdDerivations(wallet);
+
+      function exploreDerivation(i) {
+        if (i >= baseDerivations.length) return cb(null, activeAddress);
         inactiveCount = 0;
-        derive(paths[i], 0, function(err, addresses) {
+        derive(baseDerivations[i], 0, function(err, addresses) {
           if (err) return cb(err);
-          explorePath(i + 1);
+          exploreDerivation(i + 1);
         });
       }
 
-      function derive(basePath, index, cb) {
+      function derive(baseDerivation, index, cb) {
         if (inactiveCount > inGap) return cb();
-        var address = root.generateAddress(wallet, basePath, index);
+
+        var address = root.generateAddress(wallet, baseDerivation, index);
         root.getAddressData(address, wallet.network, function(err, addressData) {
           if (err) return cb(err);
 
@@ -191,30 +237,25 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
 
           reportFn('inactiveCount:' + inactiveCount);
 
-          derive(basePath, index + 1, cb);
+          derive(baseDerivation, index + 1, cb);
         });
       }
-      explorePath(0);
+      exploreDerivation(0);
     }
 
-    root.generateAddress = function(wallet, path, index) {
+    root.generateAddress = function(wallet, derivedItems, index) {
       var derivedPrivateKeys = [];
       var derivedPublicKeys = [];
 
-      var xPrivKeys = lodash.pluck(wallet.copayers, 'xPriv');
-
-      lodash.each(xPrivKeys, function(xpk) {
-        var hdPrivateKey = bitcore.HDPrivateKey(xpk);
+      lodash.each([].concat(derivedItems), function(item) {
+        var hdPrivateKey = bitcore.HDPrivateKey(item.key);
 
         // private key derivation
-        var derivedHdPrivateKey = hdPrivateKey.derive(path + index);
-        var derivedPrivateKey = derivedHdPrivateKey.privateKey;
+        var derivedPrivateKey = hdPrivateKey.deriveChild(index).privateKey;
         derivedPrivateKeys.push(derivedPrivateKey);
 
         // public key derivation
-        var derivedHdPublicKey = derivedHdPrivateKey.hdPublicKey;
-        var derivedPublicKey = derivedHdPublicKey.publicKey;
-        derivedPublicKeys.push(derivedPublicKey);
+        derivedPublicKeys.push(derivedPrivateKey.publicKey);
       });
 
       var address;
@@ -228,7 +269,8 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
         addressObject: address,
         pubKeys: derivedPublicKeys,
         privKeys: derivedPrivateKeys,
-        path: path + index
+        info: derivedItems,
+        index: index,
       };
     }
 
@@ -244,10 +286,11 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
             utxo: respUtxo.data,
             privKeys: address.privKeys,
             pubKeys: address.pubKeys,
-            path: address.path,
+            info: address.info,
+            index: address.index,
             isActive: respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0,
           };
-          $rootScope.$emit('progress', lodash.pick(addressData, 'path', 'address', 'isActive', 'balance'));
+          $rootScope.$emit('progress', lodash.pick(addressData, 'info', 'address', 'isActive', 'balance'));
           if (addressData.isActive)
             return cb(null, addressData);
           return cb();

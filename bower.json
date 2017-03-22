@@ -1,10 +1,10 @@
 {
-  "name": "Address Generator",
+  "name": "copay-recovery-tool",
   "dependencies": {
     "angular": "1.4.4",
     "angular-local-storage": "~0.2.2",
-    "bitcore": "0.13.1",
-    "bitcore-mnemonic": "0.13.2",
+    "bitcore-lib": "~0.14.0",
+    "bitcore-mnemonic": "~1.2.3",
     "bootstrap": "3.3.5",
     "jquery": "2.1.4",
     "ng-lodash": "0.2.3",

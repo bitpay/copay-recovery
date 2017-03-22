@@ -32,7 +32,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     $scope.data.backUp[index] = $fileContent;
   }
 
-  $scope.proccessInputs = function() {
+  $scope.processInputs = function() {
     $("#myModal").modal('show');
     $scope.beforeScan = true;
 
@@ -74,6 +74,10 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
         $scope.totalBalance = "Available balance: " + scanResults.balance.toFixed(8) + " BTC. Insufficents funds.";
     });
   }
+
+  $scope.goBack = function() {
+    $scope.beforeScan = true;
+  };
 
   $scope.sendFunds = function(addr) {
     var toAddress = addr;
