@@ -290,7 +290,7 @@ app.service('recoveryServices', ['$rootScope', '$http', 'lodash',
             index: address.index,
             isActive: respAddress.data.unconfirmedTxApperances + respAddress.data.txApperances > 0,
           };
-          $rootScope.$emit('progress', lodash.pick(addressData, 'info', 'index', 'address', 'isActive', 'balance'));
+          $rootScope.$emit('progress', lodash.pick(addressData, 'info', 'address', 'isActive', 'balance'));
           if (addressData.isActive)
             return cb(null, addressData);
           return cb();
