@@ -36,14 +36,14 @@
 
 #header-content-center {
   text-align: center;
-  margin: auto;
+  margin: 0px 25% 23px 25%;
 }
 
 .title {
   Background: #3F546B;
   font-size: 1.2rem;
   font-weight: 100;
-  color: #A8B2BC;
+  color: #f5f5f5;
   letter-spacing: 3px;
   text-transform: uppercase;
   border-radius: 3px;
@@ -56,7 +56,6 @@
 }
 
 .container {
-  background-color: #3F546B;
   padding-right: 15px;
   padding-left: 15px;
   padding-top: 15px;
