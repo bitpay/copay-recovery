@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html ng-app="recoveryApp" lang="en">
-<head>
+  <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <script type="text/javascript" src="bower_components/angular/angular.js"></script>
@@ -13,96 +13,94 @@
     <link rel="stylesheet" href="hexdots.css" type="text/css">
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap-theme.min.css">
     <link rel="stylesheet" href="bower_components/bootstrap/dist/css/bootstrap.min.css">
-    <link rel="stylesheet" href="main.css"></link>
+    <link rel="stylesheet" href="css/main.css"></link>
     <script type="text/javascript" src="js/services.js"></script>
     <script type="text/javascript" src="js/controllers.js"></script>
-    <title>Copay recovery tool</title>
-</head>
-<div id="wrapper">
-    <header class="page-header">
-        <div class="container">
-            <img src="./img/logo-white.svg" alt="Copay" width="80" class="pull-left">
-            <span class="label">recovery tool</span>
-            <a href="https://github.com/bitpay/copay-recovery" type="button" class="btn btn-default btn-primary pull-right" target="blank">View the Code</a>
-        </div>
-    </header>
+    <title>Wallet recovery tool</title>
+  </head>
+  <div id="wrapper">
+    <div class="header"><div class="color-divider"></div></div>
+    <div id="header-content" class="row">
+      <img  class="col" id="header-content-left" src="./img/bitpay-logo-negative.svg" alt="Bitpay" width="80" height="50px">
+      <span class="col title" id="header-content-center">recovery tool</span>
+      <img  class="col" id="header-content-right" src="./img/copay-logo-negative.svg" alt="Copay" width="80" height="50px">
+    </div>
+    <div class="repository-link">
+      <a href="https://github.com/bitpay/copay-recovery" target="blank">
+        <img src="./img/github.png" width="20" class="pull-center">
+      </a>
+    </div>
     <div class="container">
-      <div ng-show="successMessage" class="alert alert-success">
-          {{successMessage}}
-      </div>
-      <div ng-show="errorMessage" class="alert alert-danger">
-          {{errorMessage}}
-      </div>
-      <div ng-show="statusMessage" class="alert alert-info">
-          {{statusMessage}}
-      </div>
+      <div ng-show="successMessage" class="alert alert-success">{{successMessage}}</div>
+      <div ng-show="errorMessage" class="alert alert-danger">{{errorMessage}}</div>
+      <div ng-show="statusMessage" class="alert alert-info">{{statusMessage}}</div>
     </div>
     <body ng-controller="recoveryController">
-        <div class="container">
-            <div ng-if="!beforeScan">
-                <div class="form-group panel">
-                    <label>{{totalBalance}}</label>
-                    <div class="input-group">
-                        <div class="input-group-addon" >Destination Address:</div>
-                        <input type="text" class="form-control" ng-model="addr">
-                    </div>
-                </div>
-                <button class="btn btn-primary btn-lg btn-block" ng-click="sendFunds(addr)">Transfer</button>
-                <a href="#" ng-click="goBack()">Back</a>
+      <div class="container">
+        <div ng-if="!beforeScan">
+          <div class="form-group panel">
+            <label>{{totalBalance}}</label>
+            <div class="input-group">
+              <div class="input-group-addon" >Destination Address:</div>
+              <input type="text" class="form-control" ng-model="addr">
             </div>
-            <div ng-if="beforeScan">
-                <div class="panel">
-                  <h4>Wallet configuration:</h4>
-                  <div class="row">
-                      <div class="col-md-3">
-                          <label>Required signatures</label>
-                          <select class="pull-right" ng-model="data.m" ng-options="option as option for option in availableOptions track by option"></select>
-                          <br>
-                          <label>Total Copayers</label>
-                          <select class="pull-right" ng-model="data.n" ng-change="change()" ng-options="option as option for option in availableOptions track by option">></select>
-                          <br>
-                          <label>Network</label>
-                          <select class="pull-right" ng-model="data.net" ng-options="option as option for option in availableNetworks track by option">></select>
-                          <br>
-                          <label>Address Gap</label>
-                          <input  class="pull-right"  size="3" type="text" class="form-control" id="gap" ng-model="data.gap">
-                          <span>(Usually does not need to be changed)</span>
-                          <br>
-                      </div>
-                  </div>
-                </div>
-                <div class="form-group panel" ng-if="data.n >= 1" ng-repeat="copayer in copayers">
-                  <div class="row">
-                    <div class="form-group col-lg-6">
-                        <label>Backup for copayer {{copayer}}:</label>
-                        <input type="text" class="form-control" ng-model="data.backUp[copayer]" placeholder="Mnemonic or export wallet data">
-                    </div>
-                    <div class="form-group col-lg-6">
-                        <label>Or upload a file: </label>
-                        <input type="file" on-read-file="showContent($fileContent, copayer)" accept="application/json, .txt">
-                    </div>
-                  </div>
-                  <hr>
-                  <div class="row">
-                    <div class="form-group col-lg-6">
-                        <label>Password:</label>
-                        <input type="password" class="form-control" ng-model="data.pass[copayer]">
-                    </div>
-                    <div class="form-goup col-lg-6">
-                        <label>Encrypted private key password (in case you have one):</label>
-                        <input type="password" class="form-control" ng-model="data.passX[copayer]">
-                    </div>
-                  </div>
-                </div>
-                <button class="btn btn-primary btn-lg btn-block" ng-click="processInputs()">Scan wallet</button><br><br>
-            </div>
-            <div class="modal fade" id="myModal" data-backdrop="static" data-keyboard="false">
-                <div class="modal-dialog" style="position: absolute;display: block;top: 50%;left: 50%;">
-                    <!-- Modal content-->
-                    <div class="hexdots-loader" ></div>
-                </div>
-            </div>
+          </div>
+          <button class="btn btn-primary btn-lg btn-block" ng-click="sendFunds(addr)">Transfer</button>
+          <a href="#" ng-click="goBack()">Back</a>
         </div>
+        <div ng-if="beforeScan">
+          <div class="panel">
+            <h4>Wallet configuration</h4>
+            <div class="row">
+              <div class="col-lg-6">
+                <label>Required number of signatures</label>
+                <select class="pull-right" ng-model="data.m" ng-options="option as option for option in availableOptions track by option"></select>
+                <br>
+                <label>Total number of Copayers</label>
+                <select class="pull-right" ng-model="data.n" ng-change="change()" ng-options="option as option for option in availableOptions track by option">></select>
+                <br>
+                <label>Network</label>
+                <select class="pull-right" ng-model="data.net" ng-options="option as option for option in availableNetworks track by option">></select>
+                <br>
+                <label>Address Gap</label>
+                <input  class="pull-right"  size="3" type="text" class="form-control" id="gap" ng-model="data.gap">
+                <span>(Usually does not need to be changed)</span>
+                <br>
+              </div>
+            </div>
+          </div>
+          <div class="form-group panel" ng-if="data.n >= 1" ng-repeat="copayer in copayers">
+            <div class="row">
+              <div class="form-group col-lg-6">
+                <label>Backup for copayer {{copayer}}:</label>
+                <input type="text" class="form-control" ng-model="data.backUp[copayer]" placeholder="Mnemonic or export wallet data">
+              </div>
+              <div class="form-group col-lg-6">
+                <label>Or upload a file: </label>
+                <input type="file" on-read-file="showContent($fileContent, copayer)" accept="application/json, .txt">
+              </div>
+            </div>
+            <hr>
+            <div class="row">
+              <div class="form-group col-lg-6">
+                <label>Password:</label>
+                <input type="password" class="form-control" ng-model="data.pass[copayer]">
+              </div>
+              <div class="form-goup col-lg-6">
+                <label>Encrypted private key password (in case you have one):</label>
+                <input type="password" class="form-control" ng-model="data.passX[copayer]">
+              </div>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-lg btn-block" ng-click="processInputs()">Scan wallet</button><br><br>
+        </div>
+        <div class="modal fade" id="myModal" data-backdrop="static" data-keyboard="false">
+          <div class="modal-dialog" style="position: absolute;display: block;top: 50%;left: 50%;">
+            <!-- Modal content-->
+            <div class="hexdots-loader" ></div>
+          </div>
+        </div>
+      </div>
     </body>
-</div>
+  </div>
 </html>

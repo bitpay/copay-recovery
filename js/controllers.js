@@ -1,5 +1,5 @@
 var app = angular.module("recoveryApp", ["recoveryApp.services", "ngLodash"]);
-app.controller("recoveryController", function($rootScope, $scope, recoveryServices, lodash) {
+app.controller("recoveryController", function($rootScope, $scope, $log, recoveryServices, lodash) {
   var scanResults;
   var wallet;
   var fee = 0.0001;
@@ -19,7 +19,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
   $scope.data.pass = [];
 
   $rootScope.$on('progress', function(name, data) {
-    console.log(data);
+    $log.debug(data);
   });
 
   $scope.change = function() {
@@ -53,7 +53,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
     showMessage('Scanning funds...', 1);
 
     var reportFn = function(data) {
-      console.log('Report:', data);
+      $log.debug('Report:', data);
     };
 
     var gap = +$scope.data.gap;
@@ -91,7 +91,7 @@ app.controller("recoveryController", function($rootScope, $scope, recoveryServic
 
     recoveryServices.txBroadcast(rawTx, $scope.data.net).then(function(response) {
         showMessage((scanResults.balance - fee).toFixed(8) + ' BTC sent to address: ' + toAddress, 2);
-        console.log('Transaction complete.  ' + (scanResults.balance - fee) + ' BTC sent to address: ' + toAddress);
+        $log.debug('Transaction complete.  ' + (scanResults.balance - fee) + ' BTC sent to address: ' + toAddress);
       },
       function(error) {
         showMessage('Could not broadcast transaction. Please, try later.', 3);
