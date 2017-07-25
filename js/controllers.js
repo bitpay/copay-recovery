@@ -19,7 +19,7 @@ app.controller("recoveryController", function($rootScope, $scope, $log, recovery
   $scope.data.pass = [];
 
   $rootScope.$on('progress', function(name, data) {
-    $log.debuglog(data);
+    $log.debug(data);
   });
 
   $scope.change = function() {
