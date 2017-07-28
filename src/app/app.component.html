@@ -1,0 +1,128 @@
+<div class="header">
+  <div class="header-content">
+    <img class="bitpay-logo" src="assets/img/bitpay-logo-negative.svg" alt="Bitpay">
+    <div class="header-center">
+      <h3 class="header-title">Recovery Tool</h3>
+      <div class="repository-link">
+        <a href="https://github.com/bitpay/copay-recovery" target="blank">
+          <img src="assets/img/github.png" alt="Github">
+        </a>
+      </div>
+    </div>
+    <img class="copay-logo" src="assets/img/copay-logo-negative.svg" alt="Copay">
+  </div>
+</div>
+<div [hidden]="!showLoadingSpinner" class="no-clickable-background">
+  <div class="loading-message">
+    <h4>Please wait</h4>
+    <h4>This process could take several minutes</h4>
+  </div>
+</div>
+<div class="container">
+
+  <div [hidden]="!successMessage" class="alert alert-success">{{successMessage}}</div>
+  <div [hidden]="!errorMessage" class="alert alert-danger">{{errorMessage}}</div>
+  <div [hidden]="!statusMessage" class="alert alert-info">{{statusMessage}}</div>
+
+  <form #processInputsForm="ngForm" (ngSubmit)="processInputs()" *ngIf="beforeScan">
+
+    <div class="card">
+      <div class="card-block">
+        <h4 class="card-title">WALLET CONFIGURATION</h4>
+        <div class="row">
+          <div class="form-group col-sm-6">
+            <label for="signaturesNumber">Required number of signatures</label>
+            <select class="form-control" id="signaturesNumber" name="signaturesNumber" [(ngModel)]="signaturesNumber">
+            <option *ngFor="let option of availableOptions" [ngValue]="option">{{option}}</option>
+          </select>
+          </div>
+
+          <div class="form-group col-sm-6">
+            <label for="copayersNumber">Total number of Copayers</label>
+            <select class="form-control" id="copayersNumber" name="copayersNumber" [(ngModel)]="copayersNumber" (ngModelChange)="updateCopayersForm($event)">
+            <option *ngFor="let option of availableOptions" [ngValue]="option">{{option}}</option>
+          </select>
+          </div>
+
+          <div class="form-group col-sm-6">
+            <label for="network">Network</label>
+            <select class="form-control" id="network" name="network" [(ngModel)]="network">
+            <option *ngFor="let network of availableNetworks" [ngValue]="network">{{network}}</option>
+          </select>
+          </div>
+
+          <div class="form-group col-sm-6">
+            <label for="addressGap">Address Gap</label><small> (Usually does not need to be changed)</small>
+            <input type="number" class="form-control" id="addressGap" name="addressGap" [(ngModel)]="addressGap" required>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" *ngFor="let copayer of copayers">
+      <div class="card-block">
+        <h6 class="card-title">Backup for copayer {{copayer}}:</h6>
+        <div class="row">
+          <div class="form-group col-sm-6">
+            <label for="dataBackUp">Recovery phrase (mnemonic) or File/Text backup</label>
+            <input type="text" class="form-control" id="dataBackUp" name="dataBackUp" [(ngModel)]="data.backUp[copayer]" required>
+          </div>
+
+          <div class="form-group col-sm-6">
+            <label for="contentFile">Or upload a File/Text backup:</label>
+            <input type="file" class="form-control-file" id="contentFile" name="contentFile" accept=".json, .txt" aria-describedby="contentFileHelp"
+              (change)="fileChangeEvent($event, copayer)">
+            <small id="fileHelp" class="form-text text-muted">Extensions accepted: .json and .txt</small>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="dataPass">Backup password:</label><small> (in case you have one)</small>
+          <input type="password" class="form-control" id="dataPass" name="dataPass" [(ngModel)]="data.pass[copayer]">
+        </div>
+
+        <div class="form-group">
+          <label for="dataPassX">Encrypted private key password</label><small> (spending password)</small>
+          <input type="password" class="form-control" id="dataPassX" name="dataPassX" [(ngModel)]="data.passX[copayer]">
+        </div>
+      </div>
+    </div>
+
+    <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Scan wallet</button>
+  </form>
+
+  <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress)" *ngIf="!beforeScan">
+
+    <div class="card">
+      <div class="card-block">
+        <h6 class="card-title">{{totalBalance}}</h6>
+        <div class="input-group">
+          <div class="input-group-addon">Destination Address:</div>
+          <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress"
+            required>
+        </div>
+      </div>
+    </div>
+    <button type="submit" [disabled]="!sendFundsForm.form.valid || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Transfer</button>
+    <button type="button" (click)="ngOnInit()" class="btn btn-outline-primary btn-lg btn-block">Go back</button>
+  </form>
+
+  <div [hidden]="!showLoadingSpinner">
+    <div class="s1">
+      <div class="s b sb1"></div>
+      <div class="s b sb2"></div>
+      <div class="s b sb3"></div>
+      <div class="s b sb4"></div>
+    </div>
+    <div class="s2">
+      <div class="s b sb5"></div>
+      <div class="s b sb6"></div>
+      <div class="s b sb7"></div>
+      <div class="s b sb8"></div>
+    </div>
+    <div class="bigcon">
+      <div class="big b"></div>
+    </div>
+  </div>
+
+</div>
