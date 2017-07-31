@@ -1,4 +1,4 @@
-# Copay Recovery Tool
+# Recovery Tool
 A simple UI to recover funds from Copay backups.
 
 ## Installation
@@ -43,7 +43,7 @@ ng serve
 There is a public install of this software hosted at github at: 
 https://bitpay.github.io/copay-recovery/
 
-## About Copay Recovery Tool
+## About Recovery Tool
 
 This project was generated with [Angular CLI](https://github.com/angular/angular-cli) version 1.2.1.
 
