@@ -1,0 +1,241 @@
+// Colors
+$bitpayColor: #293c92;
+$copayColor: #192c3a;
+$copayColorOld: #1abb9b;
+$white: #ffffff;
+$bodyBackgroundColor: #F1f3f5;
+
+@mixin gradient {
+    background: $bitpayColor; /* For browsers that do not support gradients */
+    background: -webkit-linear-gradient(left, $bitpayColor , $copayColorOld); /* For Safari 5.1 to 6.0 */
+    background: -o-linear-gradient(right, $bitpayColor, $copayColorOld); /* For Opera 11.1 to 12.0 */
+    background: -moz-linear-gradient(right, $bitpayColor, $copayColorOld); /* For Firefox 3.6 to 15 */
+    background: linear-gradient(to right, $bitpayColor , $copayColorOld); /* Standard syntax */
+}
+
+html {
+    position: relative;
+    min-height: 100%;
+}
+
+body {
+    background-color: $bodyBackgroundColor;
+}
+
+.btn {
+    cursor: pointer;
+}
+
+.header {
+    height: 8rem;
+    @include gradient;
+    .header-content {
+        display: flex;
+        justify-content: space-around;
+        padding-top: 2.6rem;
+        .bitpay-logo, .copay-logo {
+            max-height: 3rem;
+        }
+        .header-center {
+            font-size: 1.6rem;
+            .header-title {
+                margin: 0rem;
+                color: $white;
+                text-shadow: 1px 1px $copayColor;
+                text-transform: uppercase;
+                font-size: 1.2rem;
+            }
+            .repository-link {
+                text-align: center;
+                img {
+                    width: 1.5rem;
+                }
+            }
+        }
+    }
+}
+
+.container {
+    padding-top: 2rem;
+    padding-bottom: 2rem; 
+    .btn-primary {
+        color: $white;
+        background-color: $bitpayColor;
+        border-color: $bitpayColor;
+    }
+
+    .btn-primary:hover {
+        color: $white;
+        background-color: $copayColorOld;
+        border-color: $copayColorOld;
+    }
+    .btn-outline-primary:hover {
+        background-color: lightgrey;
+        border-color: lightgrey;
+    }
+    .card {
+        margin-bottom: 1.5rem;
+    }
+}
+
+/* Style for spinner */
+* {
+  box-sizing: border-box;
+}
+
+.no-clickable-background {
+    width: 100%;
+    position: absolute;
+    top: 0px;
+    bottom: 0px;
+    z-index: 999;
+    background-color:rgba(0, 0, 0, 0.5);
+    text-align: center;
+}
+
+.s2 {
+  position: fixed;
+  height: 100px;
+  width: 100px;
+  background-color: transparent;
+  top: 50vh;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 1000;
+}
+
+.s1 {
+  position: fixed;
+  height: 100px;
+  width: 100px;
+  top: 50vh;
+  left: 50%;
+  transform-origin: center;
+  transform: translate(-50%, -50%) rotate(45deg);
+  background-color: transparent;
+  z-index: 1000;
+}
+
+.bigcon {
+  position: fixed;
+  height: 95px;
+  width: 95px;
+  top: 50vh;
+  left: 50%;
+  transform-origin: center;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  background-color: transparent;
+  animation: bigcon 2s infinite linear;
+  animation-delay: 0.25s;
+  z-index: 1000;
+}
+
+.loading-message {
+    position: fixed;
+    top: 65vh;
+    color: lightgray;
+    width: 100%;
+}
+
+.b {
+  border-radius: 50%;
+  position: absolute;
+}
+
+.s {
+  width: 25px;
+  height: 25px;
+  animation: small 2s infinite ease;
+  box-shadow: 0px 2px rgba(0,0,0,0.3);
+   background-color: $copayColor;
+}
+
+.s:nth-child(1) {
+  top: 0%;
+  left: 0%;
+}
+
+.s:nth-child(2) {
+  top: 0%;
+  right: 0%;
+}
+
+.s:nth-child(3) {
+  right: 0%;
+  bottom: 0%;
+}
+
+.s:nth-child(4) {
+  bottom: 0%;
+  left: 0%;
+}
+
+.big {
+  width: 20px;
+  height: 20px;
+  border-radius: 15px;
+  box-shadow:0px 0px 10px $copayColorOld, 0px 0px 20px $copayColorOld, 0px 0px 30px $copayColorOld, 0px 0px 50px $copayColorOld, 0px 0px 60px $copayColorOld ;
+  z-index: 1;
+  background-color: $copayColorOld;
+  animation: bigball 1s infinite linear;
+}
+
+.sb1{
+  animation-delay: -1.75s;
+}
+.sb6{
+  animation-delay: -1.5s;
+}
+.sb2{
+  animation-delay: -1.25s;
+}
+.sb7{
+  animation-delay: -1s;
+}
+.sb3{
+  animation-delay: -0.75s;
+}
+.sb8{
+  animation-delay: -0.5s;
+}
+.sb4{
+  animation-delay: -0.25s;
+}
+.sb5{
+  animation-delay: -0s;
+}
+
+@keyframes bigcon {
+  0% {
+    transform-origin: center;
+    transform: translate(-50%, -50%) rotate(45deg);
+  }
+  100% {
+    transform-origin: center;
+    transform: translate(-50%, -50%) rotate(405deg);
+  }
+}
+
+@keyframes small {
+  0% {
+    transform: scale(1);
+     background-color: $copayColor;
+  }
+  10% {
+    transform: scale(1.3);
+    background-color: $copayColorOld;
+  }
+  15% {
+    transform: scale(1);
+  }
+  25%{
+transform: scale(1);
+     background-color: $copayColor;
+  }
+  100%{
+    transform: scale(1);
+     background-color: $copayColor;
+  }
+}
+
+/* End style for spinner */
