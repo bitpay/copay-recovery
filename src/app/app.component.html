@@ -14,8 +14,12 @@
 </div>
 <div [hidden]="!showLoadingSpinner" class="no-clickable-background">
   <div class="loading-message">
-    <h4>Please wait</h4>
-    <h4>This process could take several minutes</h4>
+<PRE>
+Scanned addresses: {{reportAddresses}}
+Scanned funds: {{reportAmount}}
+Running Inactive Addresses: {{reportInactive}}
+</PRE>
+    <h6>Please wait. This process could take several minutes</h6>
   </div>
 </div>
 <div class="container">
@@ -45,9 +49,9 @@
           </div>
 
           <div class="form-group col-sm-6">
-            <label for="network">Network</label>
-            <select class="form-control" id="network" name="network" [(ngModel)]="network">
-            <option *ngFor="let network of availableNetworks" [ngValue]="network">{{network}}</option>
+            <label for="chain">Chain</label>
+            <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
+            <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
           </select>
           </div>
 
@@ -91,7 +95,7 @@
     <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Scan wallet</button>
   </form>
 
-  <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress)" *ngIf="!beforeScan">
+  <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress)" *ngIf="!beforeScan && !done">
 
     <div class="card">
       <div class="card-block">
