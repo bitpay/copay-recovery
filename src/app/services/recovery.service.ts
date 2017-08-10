@@ -20,7 +20,7 @@ export class RecoveryService {
   public apiURI = {
     'btc/livenet': 'https://insight.bitpay.com/api/',
     'btc/testnet': 'https://test-insight.bitpay.com/api/',
-    'bch/livenet': 'https://blockdozer.com/insight-api/',
+    'bch/livenet': 'https://cashexplorer.bitcoin.com/api/',
   };
 
 
