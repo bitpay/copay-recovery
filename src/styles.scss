@@ -135,6 +135,16 @@ body {
     top: 65vh;
     color: lightgray;
     width: 100%;
+    text-align: center;
+    pre {
+      display: flex;
+      justify-content: center;
+      text-align: left;
+      color: lightgray;
+      .labels, .values {
+        margin-left: -55px;
+      }
+    }
 }
 
 .b {

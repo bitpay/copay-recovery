@@ -2,7 +2,7 @@
   <div class="header-content">
     <img class="bitpay-logo" src="assets/img/bitpay-logo-negative.svg" alt="Bitpay">
     <div class="header-center">
-      <h3 class="header-title">Recovery Tool</h3>
+      <h3 class="header-title" >Recovery Tool</h3>
       <div class="repository-link">
         <a href="https://github.com/bitpay/copay-recovery" target="blank">
           <img src="assets/img/github.png" alt="Github">
@@ -14,8 +14,20 @@
 </div>
 <div [hidden]="!showLoadingSpinner" class="no-clickable-background">
   <div class="loading-message">
-    <h4>Please wait</h4>
-    <h4>This process could take several minutes</h4>
+    <h5>Please wait</h5>
+    <h5>This process could take several minutes</h5>
+    <PRE *ngIf="reportAddresses || reportAmount || reportInactive">
+      <div class="labels">
+        Scanned addresses: 
+        Found funds: 
+        Inactive Addresses Streak: 
+      </div>
+      <div class="values">
+        {{reportAddresses}}
+        {{reportAmount}}
+        {{reportInactive}}
+      </div>
+    </PRE>
   </div>
 </div>
 <div class="container">
@@ -45,9 +57,9 @@
           </div>
 
           <div class="form-group col-sm-6">
-            <label for="network">Network</label>
-            <select class="form-control" id="network" name="network" [(ngModel)]="network">
-            <option *ngFor="let network of availableNetworks" [ngValue]="network">{{network}}</option>
+            <label for="chain">Chain</label>
+            <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
+            <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
           </select>
           </div>
 
@@ -91,19 +103,17 @@
     <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Scan wallet</button>
   </form>
 
-  <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress)" *ngIf="!beforeScan">
-
+  <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress)" *ngIf="!beforeScan && !done">
     <div class="card">
       <div class="card-block">
         <h6 class="card-title">{{totalBalance}}</h6>
-        <div class="input-group">
+        <div class="input-group" *ngIf="!insufficentsFunds">
           <div class="input-group-addon">Destination Address:</div>
-          <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress"
-            required>
+          <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress" required>
         </div>
       </div>
     </div>
-    <button type="submit" [disabled]="!sendFundsForm.form.valid || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Transfer</button>
+    <button type="submit" *ngIf="!insufficentsFunds" [disabled]="!sendFundsForm.form.valid || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Transfer</button>
     <button type="button" (click)="ngOnInit()" class="btn btn-outline-primary btn-lg btn-block">Go back</button>
   </form>
 

@@ -11,10 +11,12 @@ import { RecoveryService } from '../app/services/recovery.service';
 
 export class AppComponent implements OnInit {
   public availableOptions: Array<any>;
-  public availableNetworks: Array<any>;
+  public availableChains: Array<any>;
   public signaturesNumber: number; //m
   public copayersNumber: number; //n
-  public network: string; //net
+  public chain: string;
+  public network: string;
+  public coin: string;
   public addressGap: number;
   public beforeScan: boolean;
   public copayers = [1];
@@ -25,6 +27,13 @@ export class AppComponent implements OnInit {
   public totalBalance: any;
   public destinationAddress: string;
   public showLoadingSpinner: boolean;
+  public done: boolean;
+  public broadcasted: boolean;
+  public insufficentsFunds: boolean;
+
+  public reportAmount: string;
+  public reportInactive: string;
+  public reportAddresses: string;
 
   private wallet: any;
   private scanResults: any;
@@ -39,25 +48,31 @@ export class AppComponent implements OnInit {
       gap: this.addressGap
     };
     this.availableOptions = [1, 2, 3, 4, 5, 6];
-    this.availableNetworks = ['livenet', 'testnet'];
+    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet'];
     this.fee = 0.0001;
     this.signaturesNumber = this.availableOptions[0];
     this.copayersNumber = this.availableOptions[0];
-    this.network = this.availableNetworks[0];
+    this.chain = this.availableChains[0];
     this.statusMessage = null;
     this.successMessage = null;
     this.errorMessage = null;
     this.showLoadingSpinner = false;
+    this.done = false;
+    this.broadcasted = false;
+    this.insufficentsFunds = false;
   }
 
   ngOnInit() {
     this.beforeScan = true;
+    this.done = false;
+    this.broadcasted = false;
+    this.insufficentsFunds = false;
     this.destinationAddress = '';
     this.hideMessage();
   }
 
   updateCopayersForm() {
-    this.copayers = _.map(_.range(1, this.copayersNumber + 1), function (i) {
+    this.copayers = _.map(_.range(1, this.copayersNumber + 1), function(i) {
       return i;
     });
   }
@@ -68,7 +83,7 @@ export class AppComponent implements OnInit {
     this.showLoadingSpinner = true;
     this.beforeScan = true;
 
-    var inputs = _.map(_.range(1, this.copayersNumber + 1), function (i) {
+    var inputs = _.map(_.range(1, this.copayersNumber + 1), function(i) {
       return {
         backup: self.data.backUp[i] || '',
         password: self.data.pass[i] || '',
@@ -76,16 +91,28 @@ export class AppComponent implements OnInit {
       }
     });
 
+    if (this.chain.match(/bch/)) {
+      this.network = 'livenet';
+      this.coin = 'bch'
+    } else {
+      this.network = this.chain.replace('btc/', '');
+      this.coin = 'btc'
+    }
+
     try {
-      this.wallet = this.RecoveryService.getWallet(inputs, this.signaturesNumber, this.copayersNumber, this.network);
+      this.wallet = this.RecoveryService.getWallet(inputs, this.signaturesNumber, this.copayersNumber, this.coin, this.network);
     } catch (ex) {
       this.showLoadingSpinner = false;
       return this.showMessage(ex.message, 3);
     }
     this.showMessage('Scanning funds...', 1);
 
-    var reportFn = function (data) {
-      console.log('Report:', data);
+    var reportFn = function(currentGap, activeAddresses) {
+      var balance = _.sumBy(_.flatten(_.map(activeAddresses, "utxo")), 'amount');
+      var balStr = balance.toFixed(8) + ' ';
+      self.reportInactive = currentGap;
+      self.reportAmount = balStr + ' ' + self.wallet.coin;
+      self.reportAddresses = activeAddresses.length;
     };
 
     var gap = +this.addressGap;
@@ -100,9 +127,11 @@ export class AppComponent implements OnInit {
       this.showMessage('Search completed', 2);
       this.showLoadingSpinner = false;
       this.beforeScan = false;
-      this.totalBalance = "Available balance: " + this.scanResults.balance.toFixed(8) + ' BTC';
-      if ((this.scanResults.balance - this.fee) <= 0)
+      this.totalBalance = "Available balance: " + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
+      if ((this.scanResults.balance - this.fee) <= 0) {
         this.totalBalance += ". Insufficents funds.";
+        this.insufficentsFunds = true;
+      }
     });
   }
 
@@ -116,7 +145,7 @@ export class AppComponent implements OnInit {
     var myReader: FileReader = new FileReader();
 
     myReader.readAsText(file);
-    myReader.onloadend = function (e) {
+    myReader.onloadend = function(e) {
       self.data.backUp[index] = myReader.result;
     }
   }
@@ -131,17 +160,17 @@ export class AppComponent implements OnInit {
     } catch (ex) {
       return this.showMessage(ex.message, 3);
     }
+    this.done = true;
 
-    this.RecoveryService.txBroadcast(rawTx, this.network).then((response: any) => {
+    this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).then((response: any) => {
       response.subscribe(resp => {
-        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' BTC sent to address: ' + destinationAddress, 2);
-        console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' BTC sent to address: ' + destinationAddress);
+        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin + ' sent to address: ' + destinationAddress, 2);
+        console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
+        this.broadcasted = true;
       });
-      // TODO check error cases
-    })
-      .catch(err => {
-        this.showMessage('Could not broadcast transaction. Please, try later.', 3);
-      });
+    }).catch(err => {
+      this.showMessage('Could not broadcast transaction. Please, try later.', 3);
+    });
   };
 
   hideMessage() {

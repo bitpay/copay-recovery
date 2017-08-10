@@ -1,30 +1,41 @@
-import { Injectable } from '@angular/core';
+import {
+  Injectable
+} from '@angular/core';
 
 import * as sjcl from 'sjcl';
-import * as bitcore from 'bitcore-lib';
+import * as bitcoreLib from 'bitcore-lib';
+import * as bitcoreLibCash from 'bitcore-lib-cash';
 import * as Mnemonic from 'bitcore-mnemonic';
 import * as _ from 'lodash';
-import { HttpClient } from '@angular/common/http';
+import {
+  HttpClient
+} from '@angular/common/http';
 
 @Injectable()
 export class RecoveryService {
-
-  public Transaction = bitcore.Transaction;
-  public Address = bitcore.Address;
+  public bitcore;
 
   public PATHS: Object;
+
+  public apiURI = {
+    'btc/livenet': 'https://insight.bitpay.com/api/',
+    'btc/testnet': 'https://test-insight.bitpay.com/api/',
+    'bch/livenet': 'http://blockdozer.com/insight-api/',
+  };
+
 
   constructor(private http: HttpClient) {
     this.PATHS = {
       'BIP45': ["m/45'/2147483647/0", "m/45'/2147483647/1"],
       'BIP44': {
         'testnet': ["m/44'/1'/0'/0", "m/44'/1'/0'/1"],
-        'livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1"]
+        'livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1"],
+        'bch/livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1"]
       },
     }
   }
 
-  fromBackup(data: any, m: number, n: number, network: string) {
+  fromBackup(data: any, m: number, n: number, coin: string, network: string) {
     if (!data.backup)
       return null;
     try {
@@ -70,12 +81,13 @@ export class RecoveryService {
       m: m,
       n: n,
       network: network,
+      coin: coin,
       from: "backup",
     };
     return credential;
   }
 
-  fromMnemonic(data: any, m: number, n: number, network: string) {
+  fromMnemonic(data: any, m: number, n: number, coin:string, network: string) {
     if (!data.backup)
       return null;
 
@@ -96,6 +108,7 @@ export class RecoveryService {
       m: m,
       n: n,
       network: network,
+      coin: coin,
       from: "mnemonic",
     };
     return credential;
@@ -110,7 +123,11 @@ export class RecoveryService {
     if (_.uniq(_.map(credentials, 'from')).length != 1)
       throw new Error('Mixed backup sources not supported');
 
-    result = _.pick(credentials[0], ["walletId", "derivationStrategy", "addressType", "m", "n", "network", "from"]);
+
+    if (_.uniq(_.map(credentials, 'coin')).length != 1)
+      throw new Error('Mixed coins not supported');
+
+    result = _.pick(credentials[0], ["walletId", "derivationStrategy", "addressType", "m", "n", "network", "from", "coin"]);
 
     result.copayers = _.map(credentials, (c: any) => {
       if (c.walletId != result.walletId)
@@ -130,23 +147,31 @@ export class RecoveryService {
     return result;
   }
 
-  getWallet(data: any, m: number, n: number, network: string) {
+  getWallet(data: any, m: number, n: number, coin: string, network: string) {
+    var self = this;
     var credentials = _.map(data, (dataItem: any) => {
       if (dataItem.backup.charAt(0) == '{')
-        return this.fromBackup(dataItem, m, n, network);
+        return this.fromBackup(dataItem, m, n, coin, network);
       else
-        return this.fromMnemonic(dataItem, m, n, network);
+        return this.fromMnemonic(dataItem, m, n, coin, network);
     });
+
+    if (coin =='btc') {
+      self.bitcore = bitcoreLib;
+    } else if (coin =='bch') {
+      self.bitcore = bitcoreLibCash;
+    } else {
+        throw new Error("Unknown coin " + coin);
+    }
+
     return this.buildWallet(credentials);
   }
 
   scanWallet(wallet: any, inGap: number, reportFn: Function, cb: Function) {
-    var utxos: Array<any>;
-    reportFn("Getting addresses... GAP:" + inGap);
+    var utxos: Array < any > ;
 
     // getting main addresses
     this.getActiveAddresses(wallet, inGap, reportFn, (err, addresses) => {
-      reportFn("Active addresses:" + JSON.stringify(addresses));
       if (err) return cb(err);
       utxos = _.flatten(_.map(addresses, "utxo"));
       var result = {
@@ -165,8 +190,10 @@ export class RecoveryService {
   };
 
   getHdDerivations(wallet: any) {
+    var self = this;
+
     function deriveOne(xpriv, path, compliant) {
-      var hdPrivateKey = bitcore.HDPrivateKey(xpriv);
+      var hdPrivateKey = self.bitcore.HDPrivateKey(xpriv);
       var xPrivKey = compliant ? hdPrivateKey.deriveChild(path) : hdPrivateKey.deriveNonCompliantChild(path);
       return xPrivKey;
     };
@@ -223,6 +250,7 @@ export class RecoveryService {
     var baseDerivations = this.getHdDerivations(wallet);
 
     function exploreDerivation(i) {
+
       if (i >= baseDerivations.length) return cb(null, activeAddress);
       inactiveCount = 0;
       derive(baseDerivations[i], 0, (err, addresses) => {
@@ -235,18 +263,17 @@ export class RecoveryService {
       if (inactiveCount > inGap) return cb();
 
       var address = self.generateAddress(wallet, baseDerivation, index);
-      self.getAddressData(address, wallet.network, (err, addressData) => {
+      self.getAddressData(address, wallet.coin, wallet.network, (err, addressData) => {
         if (err) return cb(err);
 
         if (!_.isEmpty(addressData)) {
-          reportFn('Address is Active!');
           console.log('#Active address:', addressData);
           activeAddress.push(addressData);
           inactiveCount = 0;
         } else
           inactiveCount++;
 
-        reportFn('inactiveCount:' + inactiveCount);
+        reportFn(inactiveCount, activeAddress);
 
         derive(baseDerivation, index + 1, cb);
       });
@@ -255,11 +282,12 @@ export class RecoveryService {
   }
 
   generateAddress(wallet: any, derivedItems: any, index: number) {
+    var self = this;
     var derivedPrivateKeys = [];
     var derivedPublicKeys = [];
 
     _.each([].concat(derivedItems), (item) => {
-      var hdPrivateKey = bitcore.HDPrivateKey(item.key);
+      var hdPrivateKey = self.bitcore.HDPrivateKey(item.key);
 
       // private key derivation
       var derivedPrivateKey = hdPrivateKey.deriveChild(index).privateKey;
@@ -271,9 +299,9 @@ export class RecoveryService {
 
     var address;
     if (wallet.addressType == "P2SH")
-      address = bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
+      address = self.bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
     else if (wallet.addressType == "P2PKH")
-      address = this.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
+      address = self.bitcore.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
     else
       throw new Error('Address type not supported');
     return {
@@ -285,13 +313,13 @@ export class RecoveryService {
     };
   }
 
-  getAddressData(address: any, network: string, cb: Function) {
+  getAddressData(address: any, coin: string, network: string, cb: Function) {
     let self = this;
     // call insight API to get address information
-    this.checkAddress(address.addressObject, network).then((respAddressObs: any) => {
+    this.checkAddress(address.addressObject, coin, network).then((respAddressObs: any) => {
       respAddressObs.subscribe(respAddress => {
         // call insight API to get utxo information
-        self.checkUtxos(address.addressObject, network).then((respUtxo: any) => {
+        self.checkUtxos(address.addressObject, coin, network).then((respUtxo: any) => {
           respUtxo.subscribe(respUtxoData => {
             var addressData = {
               address: respAddress.addrStr,
@@ -315,32 +343,23 @@ export class RecoveryService {
     });
   }
 
-  checkAddress(address: string, network: string): Promise<any> {
-    if (network == 'testnet') {
-      return new Promise(resolve => {
-        resolve(this.http.get('https://test-insight.bitpay.com/api/addr/' + address + '?noTxList=1'));
-      });
-    } else {
-      return new Promise(resolve => {
-        resolve(this.http.get('https://insight.bitpay.com/api/addr/' + address + '?noTxList=1'));
-      });
-    }
+  checkAddress(address: string, coin: string, network: string): Promise < any > {
+    var url = this.apiURI[coin + '/' + network] + 'addr/' + address + '?noTxList=1';
+    return new Promise(resolve => {
+      resolve(this.http.get(url));
+    });
   }
 
-  checkUtxos(address: string, network: string): Promise<any> {
-    if (network == 'testnet') {
-      return new Promise(resolve => {
-        resolve(this.http.get('https://test-insight.bitpay.com/api/addr/' + address + '/utxo?noCache=1'));
-      });
-    } else {
-      return new Promise(resolve => {
-        resolve(this.http.get('https://insight.bitpay.com/api/addr/' + address + '/utxo?noCache=1'));
-      });
-    }
+  checkUtxos(address: string, coin: string, network: string): Promise < any > {
+    var url = this.apiURI[coin + '/' + network] + 'addr/' + address + '/utxo?noCache=1';
+    return new Promise(resolve => {
+      resolve(this.http.get(url));
+    });
   }
 
   createRawTx(toAddress: string, scanResults: any, wallet: any, fee: number) {
-    if (!toAddress || !this.Address.isValid(toAddress))
+    var self = this;
+    if (!toAddress || ! self.bitcore.Address.isValid(toAddress))
       throw new Error('Please enter a valid address.');
 
     var amount = parseInt((scanResults.balance * 1e8 - fee * 1e8).toFixed(0));
@@ -348,15 +367,19 @@ export class RecoveryService {
     if (amount <= 0)
       throw new Error('Funds are insufficient to complete the transaction');
 
+    console.log('Generating a ' + wallet.coin +' transaction');
+
     try {
-      new this.Address(toAddress, wallet.network);
+      new self.bitcore.Address(toAddress, wallet.network);
     } catch (ex) {
       throw new Error('Incorrect destination address network');
     }
 
     try {
       var privKeys = [];
-      var tx = new this.Transaction();
+      
+      var tx = new self.bitcore.Transaction();
+
       _.each(scanResults.addresses, (address) => {
         if (address.utxo.length > 0) {
           _.each(address.utxo, (u) => {
@@ -364,11 +387,13 @@ export class RecoveryService {
               tx.from(u, address.pubKeys, wallet.m);
             else
               tx.from(u);
-            privKeys = privKeys.concat(address.privKeys.slice(0, wallet.m));
 
+            privKeys = privKeys.concat(address.privKeys.slice(0, wallet.m));
           });
         }
       });
+
+
       tx.to(toAddress, amount);
       tx.sign(_.uniq(privKeys));
 
@@ -382,20 +407,13 @@ export class RecoveryService {
   }
 
   // Todo: implement txBroadcast as a Promise
-  txBroadcast(rawTx: string, network: string): Promise<any> {
-    if (network == 'testnet') {
-      return new Promise(resolve => {
-        resolve(this.http.post('https://test-insight.bitpay.com/api/tx/send', {
-          rawtx: rawTx
-        }));
-      });
-    } else {
-      return new Promise(resolve => {
-        resolve(this.http.post('https://insight.bitpay.com/api/tx/send', {
-          rawtx: rawTx
-        }));
-      });
-    }
+  txBroadcast(rawTx: string, coin: string, network: string): Promise < any > {
+    var url = this.apiURI[coin + '/' + network] + 'tx/send';
+    console.log('Posting tx to...' + url);
+    return new Promise(resolve => {
+      resolve(this.http.post(url, {
+        rawtx: rawTx
+      }));
+    });
   }
-
 }
