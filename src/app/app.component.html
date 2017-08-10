@@ -96,18 +96,16 @@ Inactive Addresses Streak: {{reportInactive}}
   </form>
 
   <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress)" *ngIf="!beforeScan && !done">
-
     <div class="card">
       <div class="card-block">
         <h6 class="card-title">{{totalBalance}}</h6>
-        <div class="input-group">
+        <div class="input-group" *ngIf="!insufficentsFunds">
           <div class="input-group-addon">Destination Address:</div>
-          <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress"
-            required>
+          <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress" required>
         </div>
       </div>
     </div>
-    <button type="submit" [disabled]="!sendFundsForm.form.valid || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Transfer</button>
+    <button type="submit" *ngIf="!insufficentsFunds" [disabled]="!sendFundsForm.form.valid || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Transfer</button>
     <button type="button" (click)="ngOnInit()" class="btn btn-outline-primary btn-lg btn-block">Go back</button>
   </form>
 

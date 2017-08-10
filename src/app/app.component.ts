@@ -14,9 +14,9 @@ export class AppComponent implements OnInit {
   public availableChains: Array<any>;
   public signaturesNumber: number; //m
   public copayersNumber: number; //n
-  public chain: string; 
+  public chain: string;
   public network: string;
-  public coin: string; 
+  public coin: string;
   public addressGap: number;
   public beforeScan: boolean;
   public copayers = [1];
@@ -28,6 +28,8 @@ export class AppComponent implements OnInit {
   public destinationAddress: string;
   public showLoadingSpinner: boolean;
   public done: boolean;
+  public broadcasted: boolean;
+  public insufficentsFunds: boolean;
 
   public reportAmount: string;
   public reportInactive: string;
@@ -56,16 +58,21 @@ export class AppComponent implements OnInit {
     this.errorMessage = null;
     this.showLoadingSpinner = false;
     this.done = false;
+    this.broadcasted = false;
+    this.insufficentsFunds = false;
   }
 
   ngOnInit() {
     this.beforeScan = true;
+    this.done = false;
+    this.broadcasted = false;
+    this.insufficentsFunds = false;
     this.destinationAddress = '';
     this.hideMessage();
   }
 
   updateCopayersForm() {
-    this.copayers = _.map(_.range(1, this.copayersNumber + 1), function (i) {
+    this.copayers = _.map(_.range(1, this.copayersNumber + 1), function(i) {
       return i;
     });
   }
@@ -76,7 +83,7 @@ export class AppComponent implements OnInit {
     this.showLoadingSpinner = true;
     this.beforeScan = true;
 
-    var inputs = _.map(_.range(1, this.copayersNumber + 1), function (i) {
+    var inputs = _.map(_.range(1, this.copayersNumber + 1), function(i) {
       return {
         backup: self.data.backUp[i] || '',
         password: self.data.pass[i] || '',
@@ -88,7 +95,7 @@ export class AppComponent implements OnInit {
       this.network = 'livenet';
       this.coin = 'bch'
     } else {
-      this.network = this.chain.replace('btc/','');
+      this.network = this.chain.replace('btc/', '');
       this.coin = 'btc'
     }
 
@@ -100,7 +107,7 @@ export class AppComponent implements OnInit {
     }
     this.showMessage('Scanning funds...', 1);
 
-    var reportFn = function (currentGap, activeAddresses) {
+    var reportFn = function(currentGap, activeAddresses) {
       var balance = _.sumBy(_.flatten(_.map(activeAddresses, "utxo")), 'amount');
       var balStr = balance.toFixed(8) + ' ';
       self.reportInactive = currentGap;
@@ -120,9 +127,11 @@ export class AppComponent implements OnInit {
       this.showMessage('Search completed', 2);
       this.showLoadingSpinner = false;
       this.beforeScan = false;
-      this.totalBalance = "Available balance: " + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin;
-      if ((this.scanResults.balance - this.fee) <= 0)
+      this.totalBalance = "Available balance: " + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
+      if ((this.scanResults.balance - this.fee) <= 0) {
         this.totalBalance += ". Insufficents funds.";
+        this.insufficentsFunds = true;
+      }
     });
   }
 
@@ -136,7 +145,7 @@ export class AppComponent implements OnInit {
     var myReader: FileReader = new FileReader();
 
     myReader.readAsText(file);
-    myReader.onloadend = function (e) {
+    myReader.onloadend = function(e) {
       self.data.backUp[index] = myReader.result;
     }
   }
@@ -151,19 +160,17 @@ export class AppComponent implements OnInit {
     } catch (ex) {
       return this.showMessage(ex.message, 3);
     }
-    this.done= true;
+    this.done = true;
 
     this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).then((response: any) => {
       response.subscribe(resp => {
-        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' '+ this.wallet.coin + ' sent to address: ' + destinationAddress, 2);
+        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin + ' sent to address: ' + destinationAddress, 2);
         console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
-
+        this.broadcasted = true;
       });
-      // TODO check error cases
-    })
-      .catch(err => {
-        this.showMessage('Could not broadcast transaction. Please, try later.', 3);
-      });
+    }).catch(err => {
+      this.showMessage('Could not broadcast transaction. Please, try later.', 3);
+    });
   };
 
   hideMessage() {
