@@ -3,8 +3,8 @@ import {
 } from '@angular/core';
 
 import * as sjcl from 'sjcl';
-import * as bitcore from 'bitcore-lib';
-import * as bitcoreCash from 'bitcore-lib-cash';
+import * as bitcoreLib from 'bitcore-lib';
+import * as bitcoreLibCash from 'bitcore-lib-cash';
 import * as Mnemonic from 'bitcore-mnemonic';
 import * as _ from 'lodash';
 import {
@@ -13,10 +13,7 @@ import {
 
 @Injectable()
 export class RecoveryService {
-
-  public Transaction = bitcore.Transaction;
-  public TransactionCash = bitcoreCash.Transaction;
-  public Address = bitcore.Address;
+  public bitcore;
 
   public PATHS: Object;
 
@@ -151,12 +148,22 @@ export class RecoveryService {
   }
 
   getWallet(data: any, m: number, n: number, coin: string, network: string) {
+    var self = this;
     var credentials = _.map(data, (dataItem: any) => {
       if (dataItem.backup.charAt(0) == '{')
         return this.fromBackup(dataItem, m, n, coin, network);
       else
         return this.fromMnemonic(dataItem, m, n, coin, network);
     });
+
+    if (coin =='btc') {
+      self.bitcore = bitcoreLib;
+    } else if (coin =='bch') {
+      self.bitcore = bitcoreLibCash;
+    } else {
+        throw new Error("Unknown coin " + coin);
+    }
+
     return this.buildWallet(credentials);
   }
 
@@ -183,9 +190,10 @@ export class RecoveryService {
   };
 
   getHdDerivations(wallet: any) {
+    var self = this;
 
     function deriveOne(xpriv, path, compliant) {
-      var hdPrivateKey = bitcore.HDPrivateKey(xpriv);
+      var hdPrivateKey = self.bitcore.HDPrivateKey(xpriv);
       var xPrivKey = compliant ? hdPrivateKey.deriveChild(path) : hdPrivateKey.deriveNonCompliantChild(path);
       return xPrivKey;
     };
@@ -274,11 +282,12 @@ export class RecoveryService {
   }
 
   generateAddress(wallet: any, derivedItems: any, index: number) {
+    var self = this;
     var derivedPrivateKeys = [];
     var derivedPublicKeys = [];
 
     _.each([].concat(derivedItems), (item) => {
-      var hdPrivateKey = bitcore.HDPrivateKey(item.key);
+      var hdPrivateKey = self.bitcore.HDPrivateKey(item.key);
 
       // private key derivation
       var derivedPrivateKey = hdPrivateKey.deriveChild(index).privateKey;
@@ -290,9 +299,9 @@ export class RecoveryService {
 
     var address;
     if (wallet.addressType == "P2SH")
-      address = bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
+      address = self.bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
     else if (wallet.addressType == "P2PKH")
-      address = this.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
+      address = self.bitcore.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
     else
       throw new Error('Address type not supported');
     return {
@@ -349,7 +358,8 @@ export class RecoveryService {
   }
 
   createRawTx(toAddress: string, scanResults: any, wallet: any, fee: number) {
-    if (!toAddress || !this.Address.isValid(toAddress))
+    var self = this;
+    if (!toAddress || ! self.bitcore.Address.isValid(toAddress))
       throw new Error('Please enter a valid address.');
 
     var amount = parseInt((scanResults.balance * 1e8 - fee * 1e8).toFixed(0));
@@ -360,7 +370,7 @@ export class RecoveryService {
     console.log('Generating a ' + wallet.coin +' transaction');
 
     try {
-      new this.Address(toAddress, wallet.network);
+      new self.bitcore.Address(toAddress, wallet.network);
     } catch (ex) {
       throw new Error('Incorrect destination address network');
     }
@@ -368,15 +378,7 @@ export class RecoveryService {
     try {
       var privKeys = [];
       
-      var tx, sigtype; 
-
-      if ( wallet.coin == 'bch' ) {
-        tx = new this.TransactionCash();
-        sigtype =bitcoreCash.crypto.Signature.SIGHASH_ALL | bitcoreCash.crypto.Signature.SIGHASH_FORKID ;
-      } else {
-        tx = new this.Transaction();
-        sigtype =bitcore.crypto.Signature.SIGHASH_ALL;
-      }
+      var tx = new self.bitcore.Transaction();
 
       _.each(scanResults.addresses, (address) => {
         if (address.utxo.length > 0) {
@@ -393,7 +395,7 @@ export class RecoveryService {
 
 
       tx.to(toAddress, amount);
-      tx.sign(_.uniq(privKeys), sigtype);
+      tx.sign(_.uniq(privKeys));
 
       var rawTx = tx.serialize();
       console.log("Raw transaction: ", rawTx);
