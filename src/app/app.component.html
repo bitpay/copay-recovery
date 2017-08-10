@@ -14,12 +14,20 @@
 </div>
 <div [hidden]="!showLoadingSpinner" class="no-clickable-background">
   <div class="loading-message">
-<PRE>
-Scanned addresses: {{reportAddresses}}
-Found funds: {{reportAmount}}
-Inactive Addresses Streak: {{reportInactive}}
-</PRE>
-    <h6>Please wait. This process could take several minutes</h6>
+    <h5>Please wait</h5>
+    <h5>This process could take several minutes</h5>
+    <PRE *ngIf="reportAddresses || reportAmount || reportInactive">
+      <div class="labels">
+        Scanned addresses: 
+        Found funds: 
+        Inactive Addresses Streak: 
+      </div>
+      <div class="values">
+        {{reportAddresses}}
+        {{reportAmount}}
+        {{reportInactive}}
+      </div>
+    </PRE>
   </div>
 </div>
 <div class="container">

@@ -132,9 +132,19 @@ body {
 
 .loading-message {
     position: fixed;
-    top: 60vh;
-    color: gray;
+    top: 65vh;
+    color: lightgray;
     width: 100%;
+    text-align: center;
+    pre {
+      display: flex;
+      justify-content: center;
+      text-align: left;
+      color: lightgray;
+      .labels, .values {
+        margin-left: -55px;
+      }
+    }
 }
 
 .b {
@@ -236,12 +246,6 @@ transform: scale(1);
     transform: scale(1);
      background-color: $copayColor;
   }
-}
-
-pre {
-  text-align: left;
-  color: white;
-  padding: 0 20%;
 }
 
 /* End style for spinner */
