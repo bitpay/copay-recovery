@@ -16,7 +16,7 @@
   <div class="loading-message">
     <h5>Please wait</h5>
     <h5>This process could take several minutes</h5>
-    <PRE *ngIf="reportAddresses || reportAmount || reportInactive">
+    <PRE *ngIf="(reportAddresses || reportAmount || reportInactive) && beforeScan">
       <div class="labels">
         Scanned addresses: 
         Found funds: 
@@ -114,8 +114,8 @@
       </div>
     </div>
     <button type="submit" *ngIf="!insufficentsFunds" [disabled]="!sendFundsForm.form.valid || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Transfer</button>
-    <button type="button" (click)="ngOnInit()" class="btn btn-outline-primary btn-lg btn-block">Go back</button>
   </form>
+  <button type="button" (click)="ngOnInit()" *ngIf="!beforeScan" class="btn btn-outline-primary btn-lg btn-block">Go back</button>
 
   <div [hidden]="!showLoadingSpinner">
     <div class="s1">

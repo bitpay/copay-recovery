@@ -57,17 +57,22 @@ body {
 
 .container {
     padding-top: 2rem;
-    padding-bottom: 2rem; 
+    padding-bottom: 2rem;
+    form {
+      margin-bottom: 1.5rem;
+    }
     .btn-primary {
         color: $white;
         background-color: $bitpayColor;
         border-color: $bitpayColor;
     }
-
-    .btn-primary:hover {
+    .btn-primary:hover:not(:disabled) {
         color: $white;
         background-color: $copayColorOld;
         border-color: $copayColorOld;
+    }
+    .btn-primary:disabled {
+      cursor: not-allowed;
     }
     .btn-outline-primary:hover {
         background-color: lightgrey;
@@ -75,6 +80,9 @@ body {
     }
     .card {
         margin-bottom: 1.5rem;
+        .card-block {
+          padding: 1.25rem;
+        }
     }
 }
 
