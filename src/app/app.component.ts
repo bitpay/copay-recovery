@@ -21,6 +21,7 @@ export class AppComponent implements OnInit {
   public beforeScan: boolean;
   public copayers = [1];
   public data: any;
+  public termsAccepted: boolean;
   public statusMessage: string;
   public successMessage: string;
   public errorMessage: string;
@@ -49,7 +50,7 @@ export class AppComponent implements OnInit {
     };
     this.availableOptions = [1, 2, 3, 4, 5, 6];
     this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet'];
-    this.fee = 0.0001;
+    this.fee = 0.001;
     this.signaturesNumber = this.availableOptions[0];
     this.copayersNumber = this.availableOptions[0];
     this.chain = this.availableChains[0];
@@ -60,6 +61,7 @@ export class AppComponent implements OnInit {
     this.done = false;
     this.broadcasted = false;
     this.insufficentsFunds = false;
+    this.termsAccepted = false;
   }
 
   ngOnInit() {

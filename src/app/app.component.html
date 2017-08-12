@@ -100,7 +100,15 @@
       </div>
     </div>
 
-    <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Scan wallet</button>
+    <div class="form-group">
+      <label >
+      <input type="checkbox" [(ngModel)]="termsAccepted" name="termsAccepted"> 
+      I have read and accept <a href="https://copay.io/disclaimer" target="_blank">Terms and Conditions</a>
+      </label>
+    </div>
+
+
+    <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner || !termsAccepted" class="btn btn-primary btn-lg btn-block">Scan wallet</button>
   </form>
 
   <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress)" *ngIf="!beforeScan && !done">
