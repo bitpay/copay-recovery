@@ -75,6 +75,7 @@ export class RecoveryService {
     var credential = {
       walletId: payload.walletId,
       copayerId: payload.copayerId,
+      publicKeyRing: payload.publicKeyRing,
       xPriv: xPriv,
       derivationStrategy: payload.derivationStrategy || "BIP45",
       addressType: payload.addressType || "P2SH",
@@ -127,7 +128,7 @@ export class RecoveryService {
     if (_.uniq(_.map(credentials, 'coin')).length != 1)
       throw new Error('Mixed coins not supported');
 
-    result = _.pick(credentials[0], ["walletId", "derivationStrategy", "addressType", "m", "n", "network", "from", "coin"]);
+    result = _.pick(credentials[0], ["walletId", "derivationStrategy", "addressType", "m", "n", "network", "from", "coin","publicKeyRing"]);
 
     result.copayers = _.map(credentials, (c: any) => {
       if (c.walletId != result.walletId)
@@ -296,7 +297,13 @@ export class RecoveryService {
       // public key derivation
       derivedPublicKeys.push(derivedPrivateKey.publicKey);
     });
-
+    if(wallet.publicKeyRing) {
+      derivedPublicKeys = [];
+      wallet.publicKeyRing.forEach( (item) => {
+        let hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(0).deriveChild(index);
+        derivedPublicKeys.push(hdPublicKey.publicKey);
+      });
+    }
     var address;
     if (wallet.addressType == "P2SH")
       address = self.bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
@@ -377,7 +384,6 @@ export class RecoveryService {
 
     try {
       var privKeys = [];
-      
       var tx = new self.bitcore.Transaction();
 
       _.each(scanResults.addresses, (address) => {
