@@ -65,12 +65,18 @@ export class AppComponent implements OnInit {
   }
 
   ngOnInit() {
+    this.hideMessage();
     this.beforeScan = true;
     this.done = false;
     this.broadcasted = false;
     this.insufficentsFunds = false;
     this.destinationAddress = '';
-    this.hideMessage();
+    this.checkAngularCryptoConfig();
+  }
+
+  checkAngularCryptoConfig() {
+    var result = this.RecoveryService.checkAngularCryptoConfig('imitate type scorpion whip oil cheese achieve rail organ donkey note screen');
+    if (result) this.showMessage(result, 3);
   }
 
   updateCopayersForm() {
@@ -183,10 +189,10 @@ export class AppComponent implements OnInit {
 
   showMessage(message: string, type: number) {
     /*
-			1 = status
-			2 = success
-			3 = error
-		*/
+      1 = status
+      2 = success
+      3 = error
+    */
 
     if (type == 1) {
       this.statusMessage = message;
