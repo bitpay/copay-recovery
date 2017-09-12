@@ -190,7 +190,7 @@ export class RecoveryService {
       if (err) return cb(err);
       utxos = _.flatten(_.map(addresses, "utxo"));
       var result = {
-        addresses: addresses,
+        addresses: _.uniq(addresses),
         balance: _.sumBy(utxos, 'amount'),
       }
       return cb(null, result);
@@ -266,7 +266,7 @@ export class RecoveryService {
 
     function exploreDerivation(i) {
 
-      if (i >= baseDerivations.length) return cb(null, activeAddress);
+      if (i >= baseDerivations.length) return cb(null, _.uniqBy(activeAddress, 'address'));
       inactiveCount = 0;
       derive(baseDerivations[i], 0, (err, addresses) => {
         if (err) return cb(err);
@@ -288,7 +288,7 @@ export class RecoveryService {
         } else
           inactiveCount++;
 
-        reportFn(inactiveCount, activeAddress);
+        reportFn(inactiveCount, _.uniqBy(activeAddress, 'address'));
 
         derive(baseDerivation, index + 1, cb);
       });
