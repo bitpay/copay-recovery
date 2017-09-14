@@ -18,9 +18,9 @@
     <h5>This process could take several minutes</h5>
     <PRE *ngIf="(reportAddresses || reportAmount || reportInactive) && beforeScan">
       <div class="labels">
-        Scanned addresses: 
-        Found funds: 
-        Inactive Addresses Streak: 
+        Scanned addresses:
+        Found funds:
+        Inactive Addresses Streak:
       </div>
       <div class="values">
         {{reportAddresses}}
@@ -56,11 +56,20 @@
           </select>
           </div>
 
-          <div class="form-group col-sm-6">
-            <label for="chain">Chain</label>
+          <div class="form-group col-sm-5">
+            <label for="chain">Chain: Bitcoin</label>
+            <span *ngIf="chain == 'btc/livenet'">livenet</span>
+            <span *ngIf="chain == 'btc/testnet'">testnet</span>
+            <span *ngIf="chain == 'bch/livenet'">Cash livenet</span>
             <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
-            <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
-          </select>
+              <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
+            </select>
+          </div>
+
+          <div class="form-group col-sm-1" class="chain-logo-container">
+            <img src="assets/img/icon-btc.svg" class="chain-logo" *ngIf="chain == 'btc/livenet'" width="50px" height="50px">
+            <img src="assets/img/icon-testnet.svg" class="chain-logo" *ngIf="chain == 'btc/testnet'" width="50px" height="50px">
+            <img src="assets/img/icon-bch.svg" class="chain-logo" *ngIf="chain == 'bch/livenet'" width="50px" height="50px">
           </div>
 
           <div class="form-group col-sm-6">
@@ -101,20 +110,22 @@
     </div>
 
     <div class="form-group">
-      <label >
-      <input type="checkbox" [(ngModel)]="termsAccepted" name="termsAccepted"> 
-      I have read and accept <a href="https://copay.io/disclaimer" target="_blank">Terms and Conditions</a>
+      <label>
+      <input type="checkbox" [(ngModel)]="termsAccepted" name="termsAccepted">
+        I have read and accept <a href="https://copay.io/disclaimer" target="_blank">Terms and Conditions</a>
       </label>
     </div>
 
-
-    <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner || !termsAccepted" class="btn btn-primary btn-lg btn-block">Scan wallet</button>
+    <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner || !termsAccepted" class="btn btn-primary btn-lg btn-block">
+      <span *ngIf="chain == 'btc/livenet' || chain == 'btc/testnet'">Scan BTC Wallet</span>
+      <span *ngIf="chain == 'bch/livenet'">Scan BCH Wallet</span>
+    </button>
   </form>
 
-  <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress)" *ngIf="!beforeScan && !done">
+  <form #sendFundsForm="ngForm" (ngSubmit)="sendFunds(destinationAddress, chain)" *ngIf="!beforeScan && !done">
     <div class="card">
       <div class="card-block">
-        <h6 class="card-title">{{totalBalance}}</h6>
+        <h6 class="card-title">{{totalBalanceStr}}</h6>
         <div class="input-group" *ngIf="!insufficentsFunds">
           <div class="input-group-addon">Destination Address:</div>
           <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress" required>

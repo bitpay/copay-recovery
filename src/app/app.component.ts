@@ -25,7 +25,8 @@ export class AppComponent implements OnInit {
   public statusMessage: string;
   public successMessage: string;
   public errorMessage: string;
-  public totalBalance: any;
+  public totalBalanceStr: string;
+  public totalBalance: number;
   public destinationAddress: string;
   public showLoadingSpinner: boolean;
   public done: boolean;
@@ -135,9 +136,10 @@ export class AppComponent implements OnInit {
       this.showMessage('Search completed', 2);
       this.showLoadingSpinner = false;
       this.beforeScan = false;
-      this.totalBalance = "Available balance: " + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
+      this.totalBalance = this.scanResults.balance.toFixed(8);
+      this.totalBalanceStr = "Available balance: " + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
       if ((this.scanResults.balance - this.fee) <= 0) {
-        this.totalBalance += ". Insufficents funds.";
+        this.totalBalanceStr += ". Insufficents funds.";
         this.insufficentsFunds = true;
       }
     });
@@ -158,7 +160,11 @@ export class AppComponent implements OnInit {
     }
   }
 
-  sendFunds(destinationAddress: string) {
+  sendFunds(destinationAddress: string, chain: string) {
+    if (!confirm('A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + chain.substring(0, 3).toUpperCase())) {
+      return;
+    }
+
     var rawTx;
 
     this.showLoadingSpinner = true;
