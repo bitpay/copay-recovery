@@ -42,37 +42,40 @@
       <div class="card-block">
         <h4 class="card-title">WALLET CONFIGURATION</h4>
         <div class="row">
-          <div class="form-group col-sm-6">
-            <label for="signaturesNumber">Required number of signatures</label>
-            <select class="form-control" id="signaturesNumber" name="signaturesNumber" [(ngModel)]="signaturesNumber">
-            <option *ngFor="let option of availableOptions" [ngValue]="option">{{option}}</option>
-          </select>
+          <div class="col-sm-12 col-xs-12 first-row">
+            <div class="form-group signatures">
+              <label for="signaturesNumber">Required number of signatures</label>
+              <select class="form-control" id="signaturesNumber" name="signaturesNumber" [(ngModel)]="signaturesNumber">
+              <option *ngFor="let option of availableOptions" [ngValue]="option">{{option}}</option>
+            </select>
+            </div>
+  
+            <div class="form-group copayers">
+              <label for="copayersNumber">Total number of Copayers</label>
+              <select class="form-control" id="copayersNumber" name="copayersNumber" [(ngModel)]="copayersNumber" (ngModelChange)="updateCopayersForm($event)">
+              <option *ngFor="let option of availableOptions" [ngValue]="option">{{option}}</option>
+            </select>
+            </div>
           </div>
 
-          <div class="form-group col-sm-6">
-            <label for="copayersNumber">Total number of Copayers</label>
-            <select class="form-control" id="copayersNumber" name="copayersNumber" [(ngModel)]="copayersNumber" (ngModelChange)="updateCopayersForm($event)">
-            <option *ngFor="let option of availableOptions" [ngValue]="option">{{option}}</option>
-          </select>
-          </div>
-
-          <div class="form-group col-sm-5">
+          <div class="form-group col-sm-6 col-xs-12">
             <label for="chain">Chain: Bitcoin</label>
             <span *ngIf="chain == 'btc/livenet'">livenet</span>
             <span *ngIf="chain == 'btc/testnet'">testnet</span>
             <span *ngIf="chain == 'bch/livenet'">Cash livenet</span>
-            <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
-              <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
-            </select>
+            <div class="chain-select">
+              <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
+                <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
+              </select>
+              <div class="chain-logo-container">
+                <img src="assets/img/icon-btc.svg" class="chain-logo" *ngIf="chain == 'btc/livenet'">
+                <img src="assets/img/icon-testnet.svg" class="chain-logo" *ngIf="chain == 'btc/testnet'">
+                <img src="assets/img/icon-bch.svg" class="chain-logo" *ngIf="chain == 'bch/livenet'">
+              </div>
+            </div>
           </div>
 
-          <div class="form-group col-sm-1" class="chain-logo-container">
-            <img src="assets/img/icon-btc.svg" class="chain-logo" *ngIf="chain == 'btc/livenet'" width="50px" height="50px">
-            <img src="assets/img/icon-testnet.svg" class="chain-logo" *ngIf="chain == 'btc/testnet'" width="50px" height="50px">
-            <img src="assets/img/icon-bch.svg" class="chain-logo" *ngIf="chain == 'bch/livenet'" width="50px" height="50px">
-          </div>
-
-          <div class="form-group col-sm-6">
+          <div class="form-group col-sm-6 col-xs-12">
             <label for="addressGap">Address Gap</label><small> (Usually does not need to be changed)</small>
             <input type="number" class="form-control" id="addressGap" name="addressGap" [(ngModel)]="addressGap" required>
           </div>

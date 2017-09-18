@@ -82,8 +82,37 @@ body {
         margin-bottom: 1.5rem;
         .card-block {
           padding: 1.25rem;
+          .first-row {
+            display: flex;
+            align-items: flex-end;
+            .signatures, .copayers {
+              width: 50%;
+            }
+            .copayers {
+              padding-left: 1rem;
+            }
+          }
         }
     }
+    .chain-select {
+      display: flex;
+      .chain-logo {
+        background: linear-gradient(to right, #293c92, #1abb9b);
+        border-radius: 23px;
+        -webkit-background-clip: padding-box;
+        -moz-background-clip:    padding;
+        background-clip:         padding-box;
+      }
+      .chain-logo-container {
+        margin: auto;
+        padding-left: 1rem;
+        img {
+          width: 2rem;
+          height: 2rem;
+        }
+      }
+    }
+    
 }
 
 /* Style for spinner */
