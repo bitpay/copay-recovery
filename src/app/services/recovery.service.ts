@@ -23,7 +23,6 @@ export class RecoveryService {
     'bch/livenet': 'https://bch-insight.bitpay.com/api/',
   };
 
-
   constructor(private http: HttpClient) {
     this.PATHS = {
       'BIP45': ["m/45'/2147483647/0", "m/45'/2147483647/1"],
@@ -41,12 +40,14 @@ export class RecoveryService {
     try {
       JSON.parse(data.backup);
     } catch (ex) {
+      console.log(ex);
       throw new Error("JSON invalid. Please copy only the text within (and including) the { } brackets around it.");
     };
     var payload;
     try {
       payload = sjcl.decrypt(data.password, data.backup);
     } catch (ex) {
+      console.log(ex);
       throw new Error("Incorrect backup password");
     };
 
@@ -69,6 +70,7 @@ export class RecoveryService {
       try {
         xPriv = sjcl.decrypt(data.xPrivPass, payload.xPrivKeyEncrypted);
       } catch (ex) {
+        console.log(ex);
         throw new Error("Can not decrypt private key");
       }
     }
@@ -88,7 +90,18 @@ export class RecoveryService {
     return credential;
   }
 
-  fromMnemonic(data: any, m: number, n: number, coin:string, network: string) {
+  checkAngularCryptoConfig(words: string) {
+    try {
+      new Mnemonic(words).toHDPrivateKey('', 'testnet').toString();
+    } catch (ex) {
+      console.log(ex);
+      return 'Before starting, check the angular cli configuration described in the README/Installation section';
+    };
+
+    return null;
+  }
+
+  fromMnemonic(data: any, m: number, n: number, coin: string, network: string) {
     if (!data.backup)
       return null;
 
@@ -99,6 +112,7 @@ export class RecoveryService {
     try {
       xPriv = new Mnemonic(words).toHDPrivateKey(passphrase, network).toString();
     } catch (ex) {
+      console.log(ex);
       throw new Error("Mnemonic wallet seed is not valid.");
     };
 
@@ -128,7 +142,7 @@ export class RecoveryService {
     if (_.uniq(_.map(credentials, 'coin')).length != 1)
       throw new Error('Mixed coins not supported');
 
-    result = _.pick(credentials[0], ["walletId", "derivationStrategy", "addressType", "m", "n", "network", "from", "coin","publicKeyRing"]);
+    result = _.pick(credentials[0], ["walletId", "derivationStrategy", "addressType", "m", "n", "network", "from", "coin", "publicKeyRing"]);
 
     result.copayers = _.map(credentials, (c: any) => {
       if (c.walletId != result.walletId)
@@ -157,26 +171,26 @@ export class RecoveryService {
         return this.fromMnemonic(dataItem, m, n, coin, network);
     });
 
-    if (coin =='btc') {
+    if (coin == 'btc') {
       self.bitcore = bitcoreLib;
-    } else if (coin =='bch') {
+    } else if (coin == 'bch') {
       self.bitcore = bitcoreLibCash;
     } else {
-        throw new Error("Unknown coin " + coin);
+      throw new Error("Unknown coin " + coin);
     }
 
     return this.buildWallet(credentials);
   }
 
   scanWallet(wallet: any, inGap: number, reportFn: Function, cb: Function) {
-    var utxos: Array < any > ;
+    var utxos: Array<any>;
 
     // getting main addresses
     this.getActiveAddresses(wallet, inGap, reportFn, (err, addresses) => {
       if (err) return cb(err);
       utxos = _.flatten(_.map(addresses, "utxo"));
       var result = {
-        addresses: addresses,
+        addresses: _.uniq(addresses),
         balance: _.sumBy(utxos, 'amount'),
       }
       return cb(null, result);
@@ -252,7 +266,7 @@ export class RecoveryService {
 
     function exploreDerivation(i) {
 
-      if (i >= baseDerivations.length) return cb(null, activeAddress);
+      if (i >= baseDerivations.length) return cb(null, _.uniqBy(activeAddress, 'address'));
       inactiveCount = 0;
       derive(baseDerivations[i], 0, (err, addresses) => {
         if (err) return cb(err);
@@ -274,7 +288,7 @@ export class RecoveryService {
         } else
           inactiveCount++;
 
-        reportFn(inactiveCount, activeAddress);
+        reportFn(inactiveCount, _.uniqBy(activeAddress, 'address'));
 
         derive(baseDerivation, index + 1, cb);
       });
@@ -297,9 +311,9 @@ export class RecoveryService {
       // public key derivation
       derivedPublicKeys.push(derivedPrivateKey.publicKey);
     });
-    if(wallet.publicKeyRing) {
+    if (wallet.publicKeyRing) {
       derivedPublicKeys = [];
-      wallet.publicKeyRing.forEach( (item) => {
+      wallet.publicKeyRing.forEach((item) => {
         let hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(0).deriveChild(index);
         derivedPublicKeys.push(hdPublicKey.publicKey);
       });
@@ -350,14 +364,14 @@ export class RecoveryService {
     });
   }
 
-  checkAddress(address: string, coin: string, network: string): Promise < any > {
+  checkAddress(address: string, coin: string, network: string): Promise<any> {
     var url = this.apiURI[coin + '/' + network] + 'addr/' + address + '?noTxList=1';
     return new Promise(resolve => {
       resolve(this.http.get(url));
     });
   }
 
-  checkUtxos(address: string, coin: string, network: string): Promise < any > {
+  checkUtxos(address: string, coin: string, network: string): Promise<any> {
     var url = this.apiURI[coin + '/' + network] + 'addr/' + address + '/utxo?noCache=1';
     return new Promise(resolve => {
       resolve(this.http.get(url));
@@ -366,7 +380,7 @@ export class RecoveryService {
 
   createRawTx(toAddress: string, scanResults: any, wallet: any, fee: number) {
     var self = this;
-    if (!toAddress || ! self.bitcore.Address.isValid(toAddress))
+    if (!toAddress || !self.bitcore.Address.isValid(toAddress))
       throw new Error('Please enter a valid address.');
 
     var amount = parseInt((scanResults.balance * 1e8 - fee * 1e8).toFixed(0));
@@ -374,19 +388,21 @@ export class RecoveryService {
     if (amount <= 0)
       throw new Error('Funds are insufficient to complete the transaction');
 
-    console.log('Generating a ' + wallet.coin +' transaction');
+    console.log('Generating a ' + wallet.coin + ' transaction');
 
     try {
       new self.bitcore.Address(toAddress, wallet.network);
     } catch (ex) {
+      console.log(ex);
       throw new Error('Incorrect destination address network');
     }
 
     try {
       var privKeys = [];
+
       var tx = new self.bitcore.Transaction();
 
-      _.each(scanResults.addresses, (address) => {
+      _.each(scanResults.addresses, (address: any) => {
         if (address.utxo.length > 0) {
           _.each(address.utxo, (u) => {
             if (wallet.addressType == 'P2SH')
@@ -413,7 +429,7 @@ export class RecoveryService {
   }
 
   // Todo: implement txBroadcast as a Promise
-  txBroadcast(rawTx: string, coin: string, network: string): Promise < any > {
+  txBroadcast(rawTx: string, coin: string, network: string): Promise<any> {
     var url = this.apiURI[coin + '/' + network] + 'tx/send';
     console.log('Posting tx to...' + url);
     return new Promise(resolve => {
