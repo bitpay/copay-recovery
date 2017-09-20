@@ -355,9 +355,14 @@ export class RecoveryService {
             };
             // TODO: Review this comment
             //$rootScope.$emit('progress', _.pick(addressData, 'info', 'address', 'isActive', 'balance'));
-            if (addressData.isActive)
-              return cb(null, addressData);
-            return cb();
+
+            /* This timeout is because we must not exceed the limit of 30 requests per minute to the server.
+            If you do, you will get an HTTP 429 error */
+            setTimeout(() => {
+              if (addressData.isActive)
+                return cb(null, addressData);
+              return cb();
+            }, 5000);
           });
         });
       });
