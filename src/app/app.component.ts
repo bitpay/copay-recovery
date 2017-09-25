@@ -103,7 +103,7 @@ export class AppComponent implements OnInit {
     if (this.chain.match(/bch/)) {
       this.network = 'livenet';
       this.coin = 'bch';
-      this.fee = 0.000002;
+      this.fee = 0.00001;
     } else {
       this.network = this.chain.replace('btc/', '');
       this.coin = 'btc';
