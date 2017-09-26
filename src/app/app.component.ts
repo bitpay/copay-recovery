@@ -40,6 +40,7 @@ export class AppComponent implements OnInit {
   private wallet: any;
   private scanResults: any;
   private fee: number;
+  private txid: string;
 
   constructor(private RecoveryService: RecoveryService) {
     this.addressGap = 20;
@@ -72,6 +73,7 @@ export class AppComponent implements OnInit {
     this.broadcasted = false;
     this.insufficentsFunds = false;
     this.destinationAddress = '';
+    this.txid = null;
     this.checkAngularCryptoConfig();
   }
 
@@ -181,13 +183,36 @@ export class AppComponent implements OnInit {
     this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).then((response: any) => {
       response.subscribe(resp => {
         this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin + ' sent to address: ' + destinationAddress, 2);
-        console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
         this.broadcasted = true;
+        this.txid = resp.txid;
+        console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
+        console.log('Transaction id: ', this.txid);
       });
     }).catch(err => {
       this.showMessage('Could not broadcast transaction. Please, try later.', 3);
     });
   };
+
+  viewOnBlockchain() {
+    var url;
+
+    switch (this.chain) {
+      case 'btc/livenet':
+        url = 'https://insight.bitpay.com/tx/';
+        break;
+      case 'btc/testnet':
+        url = 'https://test-insight.bitpay.com/tx/';
+        break;
+      case 'bch/livenet':
+        url = 'https://bch-insight.bitpay.com/tx/';
+        break;
+      default:
+        url = 'https://insight.bitpay.com/tx/';
+    }
+
+    var win = window.open(url + this.txid, '_blank');
+    win.focus();
+  }
 
   hideMessage() {
     this.statusMessage = null;
