@@ -89,7 +89,7 @@
         <div class="row">
           <div class="form-group col-sm-6">
             <label for="dataBackUp">Recovery phrase (mnemonic) or File/Text backup</label>
-            <input type="text" class="form-control" id="dataBackUp" name="dataBackUp" [(ngModel)]="data.backUp[copayer]" autocomplete="off" required>
+            <input type="text" class="form-control" id="dataBackUp-{{copayer}}" name="dataBackUp-{{copayer}}" [(ngModel)]="data.backUp[copayer]" autocomplete="off" required>
           </div>
 
           <div class="form-group col-sm-6">
@@ -102,12 +102,12 @@
 
         <div class="form-group">
           <label for="dataPass">Backup password:</label><small> (in case you have one)</small>
-          <input type="password" class="form-control" id="dataPass" name="dataPass" [(ngModel)]="data.pass[copayer]">
+          <input type="password" class="form-control" id="dataPass-{{copayer}}" name="dataPass-{{copayer}}" [(ngModel)]="data.pass[copayer]">
         </div>
 
         <div class="form-group">
           <label for="dataPassX">Encrypted private key password</label><small> (spending password)</small>
-          <input type="password" class="form-control" id="dataPassX" name="dataPassX" [(ngModel)]="data.passX[copayer]">
+          <input type="password" class="form-control" id="dataPassX-{{copayer}}" name="dataPassX-{{copayer}}" [(ngModel)]="data.passX[copayer]">
         </div>
       </div>
     </div>
