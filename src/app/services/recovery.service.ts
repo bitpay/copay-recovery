@@ -52,7 +52,6 @@ export class RecoveryService {
     };
 
     payload = JSON.parse(payload);
-
     if (!payload.n) {
       throw new Error("Backup format not recognized. If you are using a Copay Beta backup and version is older than 0.10, please see: https://github.com/bitpay/copay/issues/4730#issuecomment-244522614");
     }
@@ -312,9 +311,13 @@ export class RecoveryService {
       derivedPublicKeys.push(derivedPrivateKey.publicKey);
     });
     if (wallet.publicKeyRing) {
+      let hdPublicKey;
       derivedPublicKeys = [];
       wallet.publicKeyRing.forEach((item) => {
-        let hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(0).deriveChild(index);
+        if (wallet.derivationStrategy == 'BIP45')
+          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(2147483647).deriveChild(0).deriveChild(index);
+        if (wallet.derivationStrategy == 'BIP44')
+          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(0).deriveChild(index);
         derivedPublicKeys.push(hdPublicKey.publicKey);
       });
     }
