@@ -83,7 +83,7 @@ export class AppComponent implements OnInit {
   }
 
   updateCopayersForm() {
-    this.copayers = _.map(_.range(1, this.copayersNumber + 1), function(i) {
+    this.copayers = _.map(_.range(1, this.copayersNumber + 1), function (i) {
       return i;
     });
   }
@@ -94,7 +94,7 @@ export class AppComponent implements OnInit {
     this.showLoadingSpinner = true;
     this.beforeScan = true;
 
-    var inputs = _.map(_.range(1, this.copayersNumber + 1), function(i) {
+    var inputs = _.map(_.range(1, this.copayersNumber + 1), function (i) {
       return {
         backup: self.data.backUp[i] || '',
         password: self.data.pass[i] || '',
@@ -120,7 +120,7 @@ export class AppComponent implements OnInit {
     }
     this.showMessage('Scanning funds...', 1);
 
-    var reportFn = function(currentGap, activeAddresses) {
+    var reportFn = function (currentGap, activeAddresses) {
       var balance = _.sumBy(_.flatten(_.map(activeAddresses, "utxo")), 'amount');
       var balStr = balance.toFixed(8) + ' ';
       self.reportInactive = currentGap;
@@ -159,7 +159,7 @@ export class AppComponent implements OnInit {
     var myReader: FileReader = new FileReader();
 
     myReader.readAsText(file);
-    myReader.onloadend = function(e) {
+    myReader.onloadend = function (e) {
       self.data.backUp[index] = myReader.result;
     }
   }
@@ -242,6 +242,9 @@ export class AppComponent implements OnInit {
       this.successMessage = null;
       this.showLoadingSpinner = false;
     }
+    setTimeout(function () {
+      window.scrollTo(0, 1);
+    }, 150);
   }
 
 }
