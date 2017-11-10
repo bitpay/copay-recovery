@@ -314,13 +314,15 @@ export class RecoveryService {
       let hdPublicKey;
       derivedPublicKeys = [];
       wallet.publicKeyRing.forEach((item) => {
+        let n = parseInt(_.last(derivedItems.path.split('/')).toString());
         if (wallet.derivationStrategy == 'BIP45')
-          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(2147483647).deriveChild(0).deriveChild(index);
+          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(2147483647).deriveChild(n).deriveChild(index);
         if (wallet.derivationStrategy == 'BIP44')
-          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(0).deriveChild(index);
+          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(n).deriveChild(index);
         derivedPublicKeys.push(hdPublicKey.publicKey);
       });
     }
+
     var address;
     if (wallet.addressType == "P2SH")
       address = self.bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
