@@ -135,7 +135,7 @@ export class AppComponent implements OnInit {
       if (err) return this.showMessage(err, 3);
 
       this.scanResults = res;
-      console.log('## Total balance:', this.scanResults.balance.toFixed(8) + ' BTC');
+      console.log('## Total balance:', this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase());
 
       this.showMessage('Search completed', 2);
       this.showLoadingSpinner = false;
