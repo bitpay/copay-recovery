@@ -143,7 +143,9 @@ export class AppComponent implements OnInit {
       this.totalBalance = this.scanResults.balance.toFixed(8);
       this.totalBalanceStr = "Available balance: " + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
       if ((this.scanResults.balance - this.fee) <= 0) {
-        this.totalBalanceStr += ". Insufficents funds.";
+        if (this.scanResults.balance > 0) {
+          this.totalBalanceStr += ". Insufficent funds.";
+        }
         this.insufficentsFunds = true;
       }
     });
