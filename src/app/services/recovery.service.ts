@@ -312,9 +312,11 @@ export class RecoveryService {
     });
     if (wallet.publicKeyRing) {
       let hdPublicKey;
+      let derivedItemsArray = [].concat(derivedItems);
+      let path = derivedItemsArray[0].path;
+      let n = parseInt(_.last(path.split('/')).toString());
       derivedPublicKeys = [];
       wallet.publicKeyRing.forEach((item) => {
-        let n = parseInt(_.last(derivedItems.path.split('/')).toString());
         if (wallet.derivationStrategy == 'BIP45')
           hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(2147483647).deriveChild(n).deriveChild(index);
         if (wallet.derivationStrategy == 'BIP44')
