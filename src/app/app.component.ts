@@ -124,7 +124,7 @@ export class AppComponent implements OnInit {
       var balance = _.sumBy(_.flatten(_.map(activeAddresses, "utxo")), 'amount');
       var balStr = balance.toFixed(8) + ' ';
       self.reportInactive = currentGap;
-      self.reportAmount = balStr + ' ' + self.wallet.coin;
+      self.reportAmount = balStr + ' ' + self.wallet.coin.toUpperCase();
       self.reportAddresses = activeAddresses.length;
     };
 
@@ -184,7 +184,7 @@ export class AppComponent implements OnInit {
 
     this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).then((response: any) => {
       response.subscribe(resp => {
-        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin + ' sent to address: ' + destinationAddress, 2);
+        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: ' + destinationAddress, 2);
         this.broadcasted = true;
         this.txid = resp.txid;
         console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
