@@ -352,7 +352,7 @@ export class RecoveryService {
           respUtxo.subscribe(respUtxoData => {
 
             if (coin + '/' + network == 'bch/livenet') {
-              respAddress.addrStr = this.translateAddressCash(respAddress.addrStr);
+              respAddress.addrStr = this.translateAddressCash(respAddress.addrStr).toString();
               respUtxoData = this.translateUtxoAddress(respUtxoData);
             }
 
@@ -383,7 +383,7 @@ export class RecoveryService {
     });
   }
 
-  translateUtxoAddress(utxoArray): string {
+  translateUtxoAddress(utxoArray: any): string {
     utxoArray.forEach(utxo => {
       utxo.address = this.translateAddressCash(utxo.address);
     });
