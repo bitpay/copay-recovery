@@ -350,6 +350,12 @@ export class RecoveryService {
         // call insight API to get utxo information
         self.checkUtxos(address.addressObject, coin, network).then((respUtxo: any) => {
           respUtxo.subscribe(respUtxoData => {
+
+            if (coin + '/' + network == 'bch/livenet') {
+              respAddress.addrStr = this.translateAddressCash(respAddress.addrStr);
+              respUtxoData = this.translateUtxoAddress(respUtxoData);
+            }
+
             var addressData = {
               address: respAddress.addrStr,
               balance: respAddress.balance,
@@ -377,8 +383,22 @@ export class RecoveryService {
     });
   }
 
-  translateAddress(address: string): string {
+  translateUtxoAddress(utxoArray): string {
+    utxoArray.forEach(utxo => {
+      utxo.address = this.translateAddressCash(utxo.address);
+    });
+    return utxoArray;
+  }
+
+  translateAddressCash(address: string): string {
     let origAddress = bitcoreLib.Address(address);
+    let origObj = origAddress.toObject();
+    let resultAddress = bitcoreLibCash.Address.fromObject(origObj);
+    return resultAddress;
+  }
+
+  translateAddress(address: string): string {
+    let origAddress = bitcoreLibCash.Address(address);
     let origObj = origAddress.toObject();
     let resultAddress = bitcoreLib.Address.fromObject(origObj);
     return resultAddress;
