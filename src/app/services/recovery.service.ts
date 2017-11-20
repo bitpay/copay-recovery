@@ -14,6 +14,7 @@ import {
 @Injectable()
 export class RecoveryService {
   public bitcore;
+  public shouldTranslate: true; //FOR BLOCKDOZER EXPLORER
 
   public PATHS: Object;
 
@@ -351,7 +352,7 @@ export class RecoveryService {
         self.checkUtxos(address.addressObject, coin, network).then((respUtxo: any) => {
           respUtxo.subscribe(respUtxoData => {
 
-            if (coin + '/' + network == 'bch/livenet') {
+            if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
               respAddress.addrStr = this.translateAddressCash(respAddress.addrStr).toString();
               respUtxoData = this.translateUtxoAddress(respUtxoData);
             }
@@ -405,7 +406,7 @@ export class RecoveryService {
   }
 
   checkAddress(address: string, coin: string, network: string): Promise<any> {
-    if (coin + '/' + network == 'bch/livenet') {
+    if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
       address = this.translateAddress(address);
     }
     var url = this.apiURI[coin + '/' + network] + 'addr/' + address.toString() + '?noTxList=1';
@@ -415,7 +416,7 @@ export class RecoveryService {
   }
 
   checkUtxos(address: string, coin: string, network: string): Promise<any> {
-    if (coin + '/' + network == 'bch/livenet') {
+    if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
       address = this.translateAddress(address);
     }
     var url = this.apiURI[coin + '/' + network] + 'addr/' + address.toString() + '/utxo?noCache=1';
