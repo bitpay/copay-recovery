@@ -14,6 +14,7 @@ import {
 @Injectable()
 export class RecoveryService {
   public bitcore;
+  public shouldTranslate: true; //FOR BLOCKDOZER EXPLORER
 
   public PATHS: Object;
 
@@ -350,6 +351,12 @@ export class RecoveryService {
         // call insight API to get utxo information
         self.checkUtxos(address.addressObject, coin, network).then((respUtxo: any) => {
           respUtxo.subscribe(respUtxoData => {
+
+            if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
+              respAddress.addrStr = this.translateAddressCash(respAddress.addrStr).toString();
+              respUtxoData = this.translateUtxoAddress(respUtxoData);
+            }
+
             var addressData = {
               address: respAddress.addrStr,
               balance: respAddress.balance,
@@ -377,15 +384,29 @@ export class RecoveryService {
     });
   }
 
-  translateAddress(address: string): string {
+  translateUtxoAddress(utxoArray: any): string {
+    utxoArray.forEach(utxo => {
+      utxo.address = this.translateAddressCash(utxo.address);
+    });
+    return utxoArray;
+  }
+
+  translateAddressCash(address: string): string {
     let origAddress = bitcoreLib.Address(address);
+    let origObj = origAddress.toObject();
+    let resultAddress = bitcoreLibCash.Address.fromObject(origObj);
+    return resultAddress;
+  }
+
+  translateAddress(address: string): string {
+    let origAddress = bitcoreLibCash.Address(address);
     let origObj = origAddress.toObject();
     let resultAddress = bitcoreLib.Address.fromObject(origObj);
     return resultAddress;
   }
 
   checkAddress(address: string, coin: string, network: string): Promise<any> {
-    if (coin + '/' + network == 'bch/livenet') {
+    if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
       address = this.translateAddress(address);
     }
     var url = this.apiURI[coin + '/' + network] + 'addr/' + address.toString() + '?noTxList=1';
@@ -395,7 +416,7 @@ export class RecoveryService {
   }
 
   checkUtxos(address: string, coin: string, network: string): Promise<any> {
-    if (coin + '/' + network == 'bch/livenet') {
+    if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
       address = this.translateAddress(address);
     }
     var url = this.apiURI[coin + '/' + network] + 'addr/' + address.toString() + '/utxo?noCache=1';
