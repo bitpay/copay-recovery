@@ -14,7 +14,7 @@ import {
 @Injectable()
 export class RecoveryService {
   public bitcore;
-  public shouldTranslate: true; //FOR BLOCKDOZER EXPLORER
+  public shouldTranslate: boolean = true; //FOR BLOCKDOZER EXPLORER
 
   public PATHS: Object;
 
