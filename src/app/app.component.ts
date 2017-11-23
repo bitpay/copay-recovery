@@ -128,7 +128,7 @@ export class AppComponent implements OnInit {
       var balance = _.sumBy(_.flatten(_.map(activeAddresses, "utxo")), 'amount');
       var balStr = balance.toFixed(8) + ' ';
       self.reportInactive = currentGap;
-      self.reportAmount = balStr + ' ' + self.wallet.coin;
+      self.reportAmount = balStr + ' ' + self.wallet.coin.toUpperCase();
       self.reportAddresses = activeAddresses.length;
     };
 
@@ -139,7 +139,7 @@ export class AppComponent implements OnInit {
       if (err) return this.showMessage(err, 3);
 
       this.scanResults = res;
-      console.log('## Total balance:', this.scanResults.balance.toFixed(8) + ' BTC');
+      console.log('## Total balance:', this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase());
 
       this.showMessage('Search completed', 2);
       this.showLoadingSpinner = false;
@@ -147,7 +147,9 @@ export class AppComponent implements OnInit {
       this.totalBalance = this.scanResults.balance.toFixed(8);
       this.totalBalanceStr = "Available balance: " + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
       if ((this.scanResults.balance - this.fee) <= 0) {
-        this.totalBalanceStr += ". Insufficents funds.";
+        if (this.scanResults.balance > 0) {
+          this.totalBalanceStr += ". Insufficient funds.";
+        }
         this.insufficentsFunds = true;
       }
     });
@@ -186,7 +188,7 @@ export class AppComponent implements OnInit {
 
     this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).then((response: any) => {
       response.subscribe(resp => {
-        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin + ' sent to address: ' + destinationAddress, 2);
+        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: ' + destinationAddress, 2);
         this.broadcasted = true;
         this.txid = resp.txid;
         console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
