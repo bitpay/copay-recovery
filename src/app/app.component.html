@@ -123,6 +123,7 @@
     <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner || !termsAccepted" class="btn btn-primary btn-lg btn-block">
       <span *ngIf="chain == 'btc/livenet' || chain == 'btc/testnet'">Scan BTC Wallet</span>
       <span *ngIf="chain == 'bch/livenet'">Scan BCH Wallet</span>
+      <span *ngIf="chain == 'btg/livenet'">Scan BTG Wallet</span>
     </button>
   </form>
 

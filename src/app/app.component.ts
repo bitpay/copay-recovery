@@ -208,7 +208,11 @@ export class AppComponent implements OnInit {
         url = 'https://test-insight.bitpay.com/tx/';
         break;
       case 'bch/livenet':
-        url = 'https://bch-insight.bitpay.com/tx/';
+        //url = 'https://bch-insight.bitpay.com/tx/';
+        url = 'https://blockdozer.com/insight/tx/';
+        break;
+      case 'btg/livenet':
+        url = 'https://btgexplorer.com/tx/';
         break;
       default:
         url = 'https://insight.bitpay.com/tx/';
