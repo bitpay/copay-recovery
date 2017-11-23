@@ -51,7 +51,7 @@ export class AppComponent implements OnInit {
       gap: this.addressGap
     };
     this.availableOptions = [1, 2, 3, 4, 5, 6];
-    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet'];
+    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'btg/livenet'];
     this.fee = 0.001;
     this.signaturesNumber = this.availableOptions[0];
     this.copayersNumber = this.availableOptions[0];
@@ -106,6 +106,10 @@ export class AppComponent implements OnInit {
       this.network = 'livenet';
       this.coin = 'bch';
       this.fee = 0.00001;
+    } else if (this.chain.match(/btg/)) {
+      this.network = 'livenet';
+      this.coin = 'btg';
+      this.fee = 0.0001;
     } else {
       this.network = this.chain.replace('btc/', '');
       this.coin = 'btc';

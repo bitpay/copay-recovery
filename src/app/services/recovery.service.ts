@@ -5,6 +5,7 @@ import {
 import * as sjcl from 'sjcl';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
+import * as bitcoreLibGold from 'bitcore-lib-cash';
 import * as Mnemonic from 'bitcore-mnemonic';
 import * as _ from 'lodash';
 import {
@@ -23,6 +24,7 @@ export class RecoveryService {
     'btc/testnet': 'https://test-insight.bitpay.com/api/',
     //'bch/livenet': 'https://bch-insight.bitpay.com/api/,'
     'bch/livenet': 'https://blockdozer.com/insight-api/',
+    'btg/livenet': 'https://btgexplorer.com/api/'
   };
 
   constructor(private http: HttpClient) {
@@ -176,6 +178,8 @@ export class RecoveryService {
       self.bitcore = bitcoreLib;
     } else if (coin == 'bch') {
       self.bitcore = bitcoreLibCash;
+    } else if (coin == 'btg') {
+      self.bitcore = bitcoreLibGold;
     } else {
       throw new Error("Unknown coin " + coin);
     }
@@ -377,7 +381,7 @@ export class RecoveryService {
               if (addressData.isActive)
                 return cb(null, addressData);
               return cb();
-            }, 5000);
+            }, 2000);
           });
         });
       });
@@ -452,6 +456,7 @@ export class RecoveryService {
       _.each(scanResults.addresses, (address: any) => {
         if (address.utxo.length > 0) {
           _.each(address.utxo, (u) => {
+
             if (wallet.addressType == 'P2SH')
               tx.from(u, address.pubKeys, wallet.m);
             else
@@ -465,7 +470,6 @@ export class RecoveryService {
 
       tx.to(toAddress, amount);
       tx.sign(_.uniq(privKeys));
-
       var rawTx = tx.serialize();
       console.log("Raw transaction: ", rawTx);
       return rawTx;
