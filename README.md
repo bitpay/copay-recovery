@@ -69,7 +69,7 @@ To get more help on the Angular CLI use `ng help` or go check out the [Angular C
 `npm i -g angular-cli-ghpages`
 
 ### Build:
-`ng build --prod --aot=false --base-href "https://USER.github.io/APP-NAME/"`
+ng build --prod --aot=false --base-href "https://bitpay.github.io/copay-recovery/"
 
 (see base-href on your repo settings)
 
