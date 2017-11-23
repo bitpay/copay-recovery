@@ -5,7 +5,7 @@ import {
 import * as sjcl from 'sjcl';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
-import * as bitcoreLibGold from 'bitcore-lib-cash';
+import * as bitcoreLibGold from 'bitcore-lib-gold';
 import * as Mnemonic from 'bitcore-mnemonic';
 import * as _ from 'lodash';
 import {
