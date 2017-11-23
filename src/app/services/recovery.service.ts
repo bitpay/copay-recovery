@@ -108,7 +108,7 @@ export class RecoveryService {
     if (!data.backup)
       return null;
 
-    var words = data.backup;
+    var words = _.trim(data.backup);
     var passphrase = data.password;
     var xPriv;
 
