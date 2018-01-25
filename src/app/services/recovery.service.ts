@@ -83,7 +83,7 @@ export class RecoveryService {
       publicKeyRing: payload.publicKeyRing,
       xPriv: xPriv,
       derivationStrategy: payload.derivationStrategy || "BIP45",
-      addressType: payload.addressType || "P2SH",
+      addressType: payload.derivationStrategy == "BIP45" ? "P2SH" : payload.addressType,
       m: m,
       n: n,
       network: network,
