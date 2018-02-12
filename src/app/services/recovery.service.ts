@@ -29,7 +29,8 @@ export class RecoveryService {
 
   constructor(private http: HttpClient) {
     this.PATHS = {
-      'BIP45': ["m/45'/2147483647/0", "m/45'/2147483647/1"],
+      // we found some broken BIP45 wallet, that have some BIP44 addresses, so:
+      'BIP45': ["m/45'/2147483647/0", "m/45'/2147483647/1", , "m/45'/0/1", , "m/45'/0/1"],
       'BIP44': {
         'testnet': ["m/44'/1'/0'/0", "m/44'/1'/0'/1"],
         'livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1"],
@@ -319,14 +320,19 @@ export class RecoveryService {
     if (wallet.publicKeyRing) {
       let hdPublicKey;
       let derivedItemsArray = [].concat(derivedItems);
-      let path = derivedItemsArray[0].path;
-      let n = parseInt(_.last(path.split('/')).toString());
+      let path = derivedItemsArray[0].path.split('/');
+      let isChange = parseInt(_.last(path).toString());
       derivedPublicKeys = [];
       wallet.publicKeyRing.forEach((item) => {
-        if (wallet.derivationStrategy == 'BIP45')
-          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(2147483647).deriveChild(n).deriveChild(index);
-        if (wallet.derivationStrategy == 'BIP44')
-          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(n).deriveChild(index);
+      if (wallet.derivationStrategy == 'BIP45') {
+          // (sharedId = 2147483647 )
+          let copayerId = parseInt(_.nth(path, -2).toString());
+          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(copayerId).deriveChild(isChange).deriveChild(index);
+        }
+        else if (wallet.derivationStrategy == 'BIP44') {
+          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(isChange).deriveChild(index);
+        }
+
         derivedPublicKeys.push(hdPublicKey.publicKey);
       });
     }
