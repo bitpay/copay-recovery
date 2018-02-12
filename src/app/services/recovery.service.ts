@@ -29,7 +29,8 @@ export class RecoveryService {
 
   constructor(private http: HttpClient) {
     this.PATHS = {
-      'BIP45': ["m/45'/2147483647/0", "m/45'/2147483647/1"],
+      // we found some broken BIP45 wallet, that have some BIP44 addresses, so:
+      'BIP45': ["m/45'/2147483647/0", "m/45'/2147483647/1" ],
       'BIP44': {
         'testnet': ["m/44'/1'/0'/0", "m/44'/1'/0'/1"],
         'livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1"],
@@ -61,7 +62,8 @@ export class RecoveryService {
     }
     if ((payload.m != m) || (payload.n != n)) {
       throw new Error("The wallet configuration (m-n) does not match with values provided.");
-    }
+      }
+
     if (payload.network != network) {
       throw new Error("Incorrect network.");
     }
@@ -168,6 +170,7 @@ export class RecoveryService {
   getWallet(data: any, m: number, n: number, coin: string, network: string) {
     var self = this;
     var credentials = _.map(data, (dataItem: any) => {
+      dataItem.backup = _.trim(dataItem.backup);
       if (dataItem.backup.charAt(0) == '{')
         return this.fromBackup(dataItem, m, n, coin, network);
       else
@@ -203,8 +206,15 @@ export class RecoveryService {
   }
 
   getPaths(wallet: any) {
-    if (wallet.derivationStrategy == 'BIP45')
-      return this.PATHS[wallet.derivationStrategy];
+    if (wallet.derivationStrategy == 'BIP45') {
+      var p = _.clone(this.PATHS[wallet.derivationStrategy]);
+      // adds copayer's paths
+      for(let i=0; i<wallet.n; i++) {
+        var copayerPaths = ["m/45'/"+i+"/0",  "m/45'/"+i+"/1"];
+        p = p.concat(copayerPaths);
+      };
+      return p;
+    }
     if (wallet.derivationStrategy == 'BIP44')
       return this.PATHS[wallet.derivationStrategy][wallet.network];
   };
@@ -319,14 +329,19 @@ export class RecoveryService {
     if (wallet.publicKeyRing) {
       let hdPublicKey;
       let derivedItemsArray = [].concat(derivedItems);
-      let path = derivedItemsArray[0].path;
-      let n = parseInt(_.last(path.split('/')).toString());
+      let path = derivedItemsArray[0].path.split('/');
+      let isChange = parseInt(_.last(path).toString());
       derivedPublicKeys = [];
       wallet.publicKeyRing.forEach((item) => {
-        if (wallet.derivationStrategy == 'BIP45')
-          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(2147483647).deriveChild(n).deriveChild(index);
-        if (wallet.derivationStrategy == 'BIP44')
-          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(n).deriveChild(index);
+      if (wallet.derivationStrategy == 'BIP45') {
+          // (sharedId = 2147483647 )
+          let copayerId = parseInt(_.nth(path, -2).toString());
+          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(copayerId).deriveChild(isChange).deriveChild(index);
+        }
+        else if (wallet.derivationStrategy == 'BIP44') {
+          hdPublicKey = new self.bitcore.HDPublicKey(item.xPubKey).deriveChild(isChange).deriveChild(index);
+        }
+
         derivedPublicKeys.push(hdPublicKey.publicKey);
       });
     }
