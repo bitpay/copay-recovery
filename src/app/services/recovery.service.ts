@@ -15,25 +15,25 @@ import {
 @Injectable()
 export class RecoveryService {
   public bitcore;
-  public shouldTranslate: boolean = true; //FOR BLOCKDOZER EXPLORER
 
   public PATHS: Object;
 
   public apiURI = {
     'btc/livenet': 'https://insight.bitpay.com/api/',
     'btc/testnet': 'https://test-insight.bitpay.com/api/',
-    //'bch/livenet': 'https://bch-insight.bitpay.com/api/,'
-    'bch/livenet': 'https://blockdozer.com/insight-api/',
+    'bch/livenet': 'https://bch-insight.bitpay.com/api/',
     'btg/livenet': 'https://btgexplorer.com/api/'
   };
 
   constructor(private http: HttpClient) {
-    this.PATHS = {
+  this.PATHS = {
+  // we found some broken BIP45 wallet, that have some BIP44 addresses, so:
       'BIP45': ["m/45'/2147483647/0", "m/45'/2147483647/1"],
       'BIP44': {
         'testnet': ["m/44'/1'/0'/0", "m/44'/1'/0'/1"],
         'livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1"],
-        'bch/livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1"]
+        // future Copay BCH wallets will used coin=145
+        'bch/livenet': ["m/44'/0'/0'/0", "m/44'/0'/0'/1", "m/44'/145'/0'/0", "m/44'/145'/0'/1"]
       },
     }
   }
@@ -356,11 +356,6 @@ export class RecoveryService {
         self.checkUtxos(address.addressObject, coin, network).then((respUtxo: any) => {
           respUtxo.subscribe(respUtxoData => {
 
-            if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
-              respAddress.addrStr = this.translateAddressCash(respAddress.addrStr).toString();
-              respUtxoData = this.translateUtxoAddress(respUtxoData);
-            }
-
             var addressData = {
               address: respAddress.addrStr,
               balance: respAddress.balance,
@@ -409,21 +404,17 @@ export class RecoveryService {
     return resultAddress;
   }
 
-  checkAddress(address: string, coin: string, network: string): Promise<any> {
-    if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
-      address = this.translateAddress(address);
-    }
-    var url = this.apiURI[coin + '/' + network] + 'addr/' + address.toString() + '?noTxList=1';
+  checkAddress(address: any, coin: string, network: string): Promise<any> {
+    var addrStr = coin == 'bch' ? address.toCashAddress(true) : address.toString();
+    var url = this.apiURI[coin + '/' + network] + 'addr/' + addrStr + '?noTxList=1';
     return new Promise(resolve => {
       resolve(this.http.get(url));
     });
   }
 
-  checkUtxos(address: string, coin: string, network: string): Promise<any> {
-    if (coin + '/' + network == 'bch/livenet' && this.shouldTranslate) {
-      address = this.translateAddress(address);
-    }
-    var url = this.apiURI[coin + '/' + network] + 'addr/' + address.toString() + '/utxo?noCache=1';
+  checkUtxos(address: any, coin: string, network: string): Promise<any> {
+    var addr = coin == 'bch' ? address.toCashAddress(true) :  address.toString();
+    var url = this.apiURI[coin + '/' + network] + 'addr/' + addr.toString()  + '/utxo?noCache=1';
     return new Promise(resolve => {
       resolve(this.http.get(url));
     });
