@@ -15,15 +15,16 @@ import {
 @Injectable()
 export class RecoveryService {
   public bitcore;
-  public shouldTranslate: boolean = true; //FOR BLOCKDOZER EXPLORER
+    //public shouldTranslate: boolean = true; //FOR BLOCKDOZER EXPLORER
+  public shouldTranslate: boolean = false; //FOR BLOCKDOZER EXPLORER
 
   public PATHS: Object;
 
   public apiURI = {
     'btc/livenet': 'https://insight.bitpay.com/api/',
     'btc/testnet': 'https://test-insight.bitpay.com/api/',
-    //'bch/livenet': 'https://bch-insight.bitpay.com/api/,'
-    'bch/livenet': 'https://blockdozer.com/insight-api/',
+          'bch/livenet': 'https://bch-insight.bitpay.com/api/',
+      //    'bch/livenet': 'https://blockdozer.com/api/',
     'btg/livenet': 'https://btgexplorer.com/api/'
   };
 
