@@ -35,6 +35,10 @@ body {
         padding-top: 2.6rem;
         .bitpay-logo, .copay-logo {
             max-height: 3rem;
+            // Small devices (landscape phones, less than 768px)
+            @media (max-width: 767.98px) { 
+              display: none;
+            }
         }
         .header-center {
             font-size: 1.6rem;
