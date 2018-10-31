@@ -199,7 +199,7 @@ export class AppComponent implements OnInit {
         console.log('Transaction id: ', this.txid);
       });
     }).catch(err => {
-      this.showMessage('Could not broadcast transaction. Please, try later.', 3);
+      this.showMessage('Could not broadcast transaction. Please, try later. Raw Tx:' + rawTx, 3);
     });
   }
 
