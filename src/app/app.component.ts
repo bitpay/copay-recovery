@@ -12,8 +12,8 @@ import { RecoveryService } from '../app/services/recovery.service';
 export class AppComponent implements OnInit {
   public availableOptions: Array<any>;
   public availableChains: Array<any>;
-  public signaturesNumber: number; //m
-  public copayersNumber: number; //n
+  public signaturesNumber: number; // m
+  public copayersNumber: number; // n
   public chain: string;
   public network: string;
   public coin: string;
@@ -42,7 +42,9 @@ export class AppComponent implements OnInit {
   private fee: number;
   private txid: string;
 
-  constructor(private RecoveryService: RecoveryService) {
+  constructor(
+    private RecoveryService: RecoveryService
+  ) {
     this.addressGap = 20;
     this.data = {
       backUp: [],
@@ -51,7 +53,7 @@ export class AppComponent implements OnInit {
       gap: this.addressGap
     };
     this.availableOptions = [1, 2, 3, 4, 5, 6];
-    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'btg/livenet'];
+    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet'];
     this.fee = 0.001;
     this.signaturesNumber = this.availableOptions[0];
     this.copayersNumber = this.availableOptions[0];
@@ -77,40 +79,37 @@ export class AppComponent implements OnInit {
     this.checkAngularCryptoConfig();
   }
 
-  checkAngularCryptoConfig() {
-    var result = this.RecoveryService.checkAngularCryptoConfig('imitate type scorpion whip oil cheese achieve rail organ donkey note screen');
-    if (result) this.showMessage(result, 3);
+  private checkAngularCryptoConfig(): void {
+    const result = this.RecoveryService.checkAngularCryptoConfig();
+    if (result) {
+      this.showMessage(result, 3);
+    }
   }
 
-  updateCopayersForm() {
-    this.copayers = _.map(_.range(1, this.copayersNumber + 1), function (i) {
+  public updateCopayersForm(): void {
+    this.copayers = _.map(_.range(1, this.copayersNumber + 1), (i) => {
       return i;
     });
   }
 
-  processInputs() {
+  public processInputs(): void {
     this.hideMessage();
-    let self = this;
     this.showLoadingSpinner = true;
     this.beforeScan = true;
 
-    var inputs = _.map(_.range(1, this.copayersNumber + 1), function (i) {
+    const inputs = _.map(_.range(1, this.copayersNumber + 1), (i) => {
       return {
-        backup: self.data.backUp[i] || '',
-        password: self.data.pass[i] || '',
-        xPrivPass: self.data.passX[i] || '',
-      }
+        backup: this.data.backUp[i] || '',
+        password: this.data.pass[i] || '',
+        xPrivPass: this.data.passX[i] || '',
+      };
     });
 
     if (this.chain.match(/bch/)) {
       this.network = 'livenet';
       this.coin = 'bch';
       this.fee = 0.00001;
-    } else if (this.chain.match(/btg/)) {
-      this.network = 'livenet';
-      this.coin = 'btg';
-      this.fee = 0.00015;
-    } else {
+    }  else {
       this.network = this.chain.replace('btc/', '');
       this.coin = 'btc';
       this.fee = 0.001;
@@ -124,19 +123,21 @@ export class AppComponent implements OnInit {
     }
     this.showMessage('Scanning funds...', 1);
 
-    var reportFn = function (currentGap, activeAddresses) {
-      var balance = _.sumBy(_.flatten(_.map(activeAddresses, "utxo")), 'amount');
-      var balStr = balance.toFixed(8) + ' ';
-      self.reportInactive = currentGap;
-      self.reportAmount = balStr + ' ' + self.wallet.coin.toUpperCase();
-      self.reportAddresses = activeAddresses.length;
+    const reportFn = (currentGap, activeAddresses) => {
+      const balance = _.sumBy(_.flatten(_.map(activeAddresses, 'utxo')), 'amount');
+      const balStr = balance.toFixed(8) + ' ';
+      this.reportInactive = currentGap;
+      this.reportAmount = balStr + ' ' + this.wallet.coin.toUpperCase();
+      this.reportAddresses = activeAddresses.length;
     };
 
-    var gap = +this.addressGap;
+    let gap = +this.addressGap;
     gap = gap ? gap : 20;
 
     this.RecoveryService.scanWallet(this.wallet, gap, reportFn, (err, res) => {
-      if (err) return this.showMessage(err, 3);
+      if (err) {
+        return this.showMessage(err, 3);
+      }
 
       this.scanResults = res;
       console.log('## Total balance:', this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase());
@@ -145,37 +146,38 @@ export class AppComponent implements OnInit {
       this.showLoadingSpinner = false;
       this.beforeScan = false;
       this.totalBalance = this.scanResults.balance.toFixed(8);
-      this.totalBalanceStr = "Available balance: " + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
+      this.totalBalanceStr = 'Available balance: ' + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
       if ((this.scanResults.balance - this.fee) <= 0) {
         if (this.scanResults.balance > 0) {
-          this.totalBalanceStr += ". Insufficient funds.";
+          this.totalBalanceStr += '. Insufficient funds.';
         }
         this.insufficentsFunds = true;
       }
     });
   }
 
-  fileChangeEvent($event, index: number): void {
+  public fileChangeEvent($event, index: number): void {
     this.readThis($event.target, index);
   }
 
-  readThis(inputValue: any, index: number): void {
-    let self = this;
-    var file: File = inputValue.files[0];
-    var myReader: FileReader = new FileReader();
+  private readThis(inputValue: any, index: number): void {
+    const file: File = inputValue.files[0];
+    const myReader: FileReader = new FileReader();
 
     myReader.readAsText(file);
-    myReader.onloadend = function (e) {
-      self.data.backUp[index] = myReader.result;
-    }
+    myReader.onloadend = (e) => {
+      this.data.backUp[index] = myReader.result;
+    };
   }
 
-  sendFunds(destinationAddress: string, chain: string) {
-    if (!confirm('A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + chain.substring(0, 3).toUpperCase())) {
+  private sendFunds(destinationAddress: string, chain: string): void {
+    // tslint:disable-next-line:max-line-length
+    const confirmMessage = ('A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + chain.substring(0, 3)).toUpperCase();
+    if (!confirm(confirmMessage)) {
       return;
     }
 
-    var rawTx;
+    let rawTx;
 
     this.showLoadingSpinner = true;
 
@@ -188,7 +190,9 @@ export class AppComponent implements OnInit {
 
     this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).then((response: any) => {
       response.subscribe(resp => {
-        this.showMessage((this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: ' + destinationAddress, 2);
+        // tslint:disable-next-line:max-line-length
+        const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: ' + destinationAddress;
+        this.showMessage(message, 2);
         this.broadcasted = true;
         this.txid = resp.txid;
         console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
@@ -197,10 +201,10 @@ export class AppComponent implements OnInit {
     }).catch(err => {
       this.showMessage('Could not broadcast transaction. Please, try later.', 3);
     });
-  };
+  }
 
-  viewOnBlockchain() {
-    var url;
+  private viewOnBlockchain(): void {
+    let url;
 
     switch (this.chain) {
       case 'btc/livenet':
@@ -210,49 +214,45 @@ export class AppComponent implements OnInit {
         url = 'https://test-insight.bitpay.com/tx/';
         break;
       case 'bch/livenet':
-        //url = 'https://bch-insight.bitpay.com/tx/';
-        url = 'https://blockdozer.com/insight/tx/';
-        break;
-      case 'btg/livenet':
-        url = 'https://btgexplorer.com/tx/';
+        url = 'https://bch-insight.bitpay.com/tx/';
         break;
       default:
         url = 'https://insight.bitpay.com/tx/';
     }
 
-    var win = window.open(url + this.txid, '_blank');
+    const win = window.open(url + this.txid, '_blank');
     win.focus();
   }
 
-  hideMessage() {
+  private hideMessage(): void {
     this.statusMessage = null;
     this.successMessage = null;
     this.errorMessage = null;
   }
 
-  showMessage(message: string, type: number) {
+  public showMessage(message: string, type: number): void {
     /*
       1 = status
       2 = success
       3 = error
     */
 
-    if (type == 1) {
+    if (type === 1) {
       this.statusMessage = message;
       this.successMessage = null;
       this.errorMessage = null;
-    } else if (type == 2) {
+    } else if (type === 2) {
       this.successMessage = message;
       this.statusMessage = null;
       this.errorMessage = null;
       this.showLoadingSpinner = false;
-    } else if (type == 3) {
+    } else if (type === 3) {
       this.errorMessage = message;
       this.statusMessage = null;
       this.successMessage = null;
       this.showLoadingSpinner = false;
     }
-    setTimeout(function () {
+    setTimeout(() => {
       window.scrollTo(0, 1);
     }, 150);
   }
