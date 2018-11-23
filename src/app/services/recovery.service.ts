@@ -413,7 +413,7 @@ export class RecoveryService {
                 return cb(null, addressData);
               }
               return cb();
-            }, 1000);
+            },1000);
           });
         });
       });
