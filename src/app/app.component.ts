@@ -172,7 +172,7 @@ export class AppComponent implements OnInit {
 
   private sendFunds(destinationAddress: string, chain: string): void {
     // tslint:disable-next-line:max-line-length
-    const confirmMessage = ('A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + chain.substring(0, 3)).toUpperCase();
+    const confirmMessage = 'A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + (chain.substring(0, 3)).toUpperCase();
     if (!confirm(confirmMessage)) {
       return;
     }
