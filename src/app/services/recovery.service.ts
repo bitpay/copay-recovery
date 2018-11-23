@@ -19,9 +19,10 @@ export class RecoveryService {
   public apiURI = {
     'btc/livenet': 'https://insight.bitpay.com/api/',
     'btc/testnet': 'https://test-insight.bitpay.com/api/',
-    'bch/livenet': 'https://bch-insight.bitpay.com/api/',
-      //    'bch/livenet': 'https://blockdozer.com/api/',
+//    'bch/livenet': 'https://bch-insight.bitpay.com/api/',
+          'bch/livenet': 'https://blockdozer.com/api/',
   };
+  public useCashAddr = true;
 
   constructor(
     private http: HttpClient
@@ -376,13 +377,23 @@ export class RecoveryService {
   private getAddressData(address: any, coin: string, network: string, cb: Function): any {
     // call insight API to get address information
     this.checkAddress(address.addressObject, coin, network).then((respAddressObs: any) => {
+
       respAddressObs.subscribe(respAddress => {
         // call insight API to get utxo information
         this.checkUtxos(address.addressObject, coin, network).then((respUtxo: any) => {
           respUtxo.subscribe(respUtxoData => {
 
+            let addr = respAddress.addrStr;
+            if (coin == 'bch' && this.useCashAddr && respUtxoData.length ) {
+              // this is to fix blockdozer 1xxx address response
+              addr = address.addressObject.toCashAddress().split(':')[1];
+              _.each(respUtxoData, (r) => {
+                r.address = addr;
+              });
+            }
+
             const addressData = {
-              address: respAddress.addrStr,
+              address: addr,
               balance: respAddress.balance,
               unconfirmedBalance: respAddress.unconfirmedBalance,
               utxo: respUtxoData,
@@ -402,22 +413,24 @@ export class RecoveryService {
                 return cb(null, addressData);
               }
               return cb();
-            }, 2000);
+            },1000);
           });
         });
       });
     });
   }
 
-  private checkAddress(address: string, coin: string, network: string): Promise<any> {
-    const url = this.apiURI[coin + '/' + network] + 'addr/' + address.toString() + '?noTxList=1';
+  private checkAddress(address: any, coin: string, network: string): Promise<any> {
+    const addr =  (coin == 'bch' && this.useCashAddr ) ? address.toCashAddress().split(':')[1] : address.toString();
+    const url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '?noTxList=1';
     return new Promise(resolve => {
       resolve(this.http.get(url));
     });
   }
 
-  private checkUtxos(address: string, coin: string, network: string): Promise<any> {
-    const url = this.apiURI[coin + '/' + network] + 'addr/' + address.toString() + '/utxo?noCache=1';
+  private checkUtxos(address: any, coin: string, network: string): Promise<any> {
+    const addr =  (coin == 'bch' && this.useCashAddr ) ? address.toCashAddress().split(':')[1] : address.toString();
+    const url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '/utxo?noCache=1';
     return new Promise(resolve => {
       resolve(this.http.get(url));
     });
@@ -451,7 +464,6 @@ export class RecoveryService {
       _.each(scanResults.addresses, (address: any) => {
         if (address.utxo.length > 0) {
           _.each(address.utxo, (u) => {
-
             if (wallet.addressType === 'P2SH') {
               tx.from(u, address.pubKeys, wallet.m);
             } else {

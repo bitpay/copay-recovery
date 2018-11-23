@@ -172,7 +172,7 @@ export class AppComponent implements OnInit {
 
   private sendFunds(destinationAddress: string, chain: string): void {
     // tslint:disable-next-line:max-line-length
-    const confirmMessage = ('A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + chain.substring(0, 3)).toUpperCase();
+    const confirmMessage = 'A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + (chain.substring(0, 3)).toUpperCase();
     if (!confirm(confirmMessage)) {
       return;
     }
@@ -191,7 +191,7 @@ export class AppComponent implements OnInit {
     this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).then((response: any) => {
       response.subscribe(resp => {
         // tslint:disable-next-line:max-line-length
-        const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: ' + destinationAddress;
+        const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: ' + destinationAddress + '. Transaction ID:' + resp.txid ;
         this.showMessage(message, 2);
         this.broadcasted = true;
         this.txid = resp.txid;
@@ -214,7 +214,8 @@ export class AppComponent implements OnInit {
         url = 'https://test-insight.bitpay.com/tx/';
         break;
       case 'bch/livenet':
-        url = 'https://bch-insight.bitpay.com/tx/';
+//        url = 'https://bch-insight.bitpay.com/tx/';
+        url = 'https://blockdozer.com/tx/';
         break;
       default:
         url = 'https://insight.bitpay.com/tx/';
