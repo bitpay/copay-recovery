@@ -19,8 +19,8 @@ export class RecoveryService {
   public apiURI = {
     'btc/livenet': 'https://insight.bitpay.com/api/',
     'btc/testnet': 'https://test-insight.bitpay.com/api/',
-//    'bch/livenet': 'https://bch-insight.bitpay.com/api/',
-          'bch/livenet': 'https://blockdozer.com/api/',
+    //    'bch/livenet': 'https://bch-insight.bitpay.com/api/',
+    'bch/livenet': 'https://blockdozer.com/api/',
   };
   public useCashAddr = true;
 
@@ -31,10 +31,14 @@ export class RecoveryService {
       // we found some broken BIP45 wallet, that have some BIP44 addresses, so:
       'BIP45': ['m/45\'/2147483647/0', 'm/45\'/2147483647/1'],
       'BIP44': {
-        'testnet': ['m/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1'],
-        'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'],
-        'bch/livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1']
-      },
+        'btc': {
+          'testnet': ['m/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1'],
+          'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'],
+        },
+        'bch': {
+          'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1', 'm/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1']
+        }
+      }
     };
   }
 
@@ -217,7 +221,7 @@ export class RecoveryService {
       return p;
     }
     if (wallet.derivationStrategy === 'BIP44') {
-      return this.PATHS[wallet.derivationStrategy][wallet.network];
+      return this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network];
     }
   }
 
@@ -384,7 +388,7 @@ export class RecoveryService {
           respUtxo.subscribe(respUtxoData => {
 
             let addr = respAddress.addrStr;
-            if (coin == 'bch' && this.useCashAddr && respUtxoData.length ) {
+            if (coin === 'bch' && this.useCashAddr && respUtxoData.length) {
               // this is to fix blockdozer 1xxx address response
               addr = address.addressObject.toCashAddress().split(':')[1];
               _.each(respUtxoData, (r) => {
@@ -413,7 +417,7 @@ export class RecoveryService {
                 return cb(null, addressData);
               }
               return cb();
-            },1000);
+            }, 1000);
           });
         });
       });
@@ -421,7 +425,7 @@ export class RecoveryService {
   }
 
   private checkAddress(address: any, coin: string, network: string): Promise<any> {
-    const addr =  (coin == 'bch' && this.useCashAddr ) ? address.toCashAddress().split(':')[1] : address.toString();
+    const addr = (coin === 'bch' && this.useCashAddr) ? address.toCashAddress().split(':')[1] : address.toString();
     const url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '?noTxList=1';
     return new Promise(resolve => {
       resolve(this.http.get(url));
@@ -429,7 +433,7 @@ export class RecoveryService {
   }
 
   private checkUtxos(address: any, coin: string, network: string): Promise<any> {
-    const addr =  (coin == 'bch' && this.useCashAddr ) ? address.toCashAddress().split(':')[1] : address.toString();
+    const addr = (coin === 'bch' && this.useCashAddr) ? address.toCashAddress().split(':')[1] : address.toString();
     const url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '/utxo?noCache=1';
     return new Promise(resolve => {
       resolve(this.http.get(url));
