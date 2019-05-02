@@ -10,17 +10,20 @@ import * as _ from 'lodash';
 import {
   HttpClient
 } from '@angular/common/http';
+import { Observable } from 'rxjs/Observable';
+import { map } from 'rxjs/operators';
+import 'rxjs/add/observable/forkJoin';
 
 @Injectable()
 export class RecoveryService {
-  public bitcore;
+  public bitcore: any;
   public PATHS: Object;
 
   public apiURI = {
-    'btc/livenet': 'https://insight.bitpay.com/api/',
-    'btc/testnet': 'https://test-insight.bitpay.com/api/',
-    //    'bch/livenet': 'https://bch-insight.bitpay.com/api/',
-    'bch/livenet': 'https://blockdozer.com/api/',
+    'btc/livenet': 'https://api.bitcore.io/api/BTC/mainnet/',
+    'btc/testnet': 'https://api.bitcore.io/api/BTC/testnet/',
+    'bch/livenet': 'https://api.bitcore.io/api/BCH/mainnet/',
+    'bch/testnet': 'https://api.bitcore.io/api/BCH/testnet/'
   };
   public useCashAddr = true;
 
@@ -36,7 +39,8 @@ export class RecoveryService {
           'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'],
         },
         'bch': {
-          'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1', 'm/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1']
+          'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1', 'm/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1'],
+          'testnet': ['m/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1']
         }
       }
     };
@@ -194,17 +198,14 @@ export class RecoveryService {
   }
 
   public scanWallet(wallet: any, inGap: number, reportFn: Function, cb: Function): any {
-    let utxos: Array<any>;
-
     // getting main addresses
     this.getActiveAddresses(wallet, inGap, reportFn, (err, addresses) => {
       if (err) {
         return cb(err);
       }
-      utxos = _.flatten(_.map(addresses, 'utxo'));
       const result = {
         addresses: _.uniq(addresses),
-        balance: _.sumBy(utxos, 'amount'),
+        balance: _.sumBy(addresses, 'balance'),
       };
       return cb(null, result);
     });
@@ -309,8 +310,8 @@ export class RecoveryService {
         if (err) {
           return callback(err);
         }
-
         if (!_.isEmpty(addressData)) {
+          addressData.balance = addressData.balance * 1e-8;
           console.log('#Active address:', addressData);
           activeAddress.push(addressData);
           inactiveCount = 0;
@@ -379,65 +380,55 @@ export class RecoveryService {
   }
 
   private getAddressData(address: any, coin: string, network: string, cb: Function): any {
-    // call insight API to get address information
-    this.checkAddress(address.addressObject, coin, network).then((respAddressObs: any) => {
+    this.getAddressInfo(address.addressObject, coin, network).subscribe((res) => {
+      const addr = coin === 'bch' && this.useCashAddr
+        ? address.addressObject.toCashAddress().split(':')[1]
+        : address.addressObject.toString();
 
-      respAddressObs.subscribe(respAddress => {
-        // call insight API to get utxo information
-        this.checkUtxos(address.addressObject, coin, network).then((respUtxo: any) => {
-          respUtxo.subscribe(respUtxoData => {
+      const addressData = {
+        address: addr,
+        balance: res.balance.balance,
+        unconfirmedBalance: res.balance.unconfirmed,
+        utxo: res.utxos,
+        privKeys: address.privKeys,
+        pubKeys: address.pubKeys,
+        info: address.info,
+        index: address.index,
+        isActive: res.balance.unconfirmed + res.balance.confirmed > 0,
+      };
+      // TODO: Review this comment
+      // $rootScope.$emit('progress', _.pick(addressData, 'info', 'address', 'isActive', 'balance'));
 
-            let addr = respAddress.addrStr;
-            if (coin === 'bch' && this.useCashAddr && respUtxoData.length) {
-              // this is to fix blockdozer 1xxx address response
-              addr = address.addressObject.toCashAddress().split(':')[1];
-              _.each(respUtxoData, (r) => {
-                r.address = addr;
-              });
-            }
-
-            const addressData = {
-              address: addr,
-              balance: respAddress.balance,
-              unconfirmedBalance: respAddress.unconfirmedBalance,
-              utxo: respUtxoData,
-              privKeys: address.privKeys,
-              pubKeys: address.pubKeys,
-              info: address.info,
-              index: address.index,
-              isActive: respAddress.unconfirmedTxApperances + respAddress.txApperances > 0,
-            };
-            // TODO: Review this comment
-            // $rootScope.$emit('progress', _.pick(addressData, 'info', 'address', 'isActive', 'balance'));
-
-            /* This timeout is because we must not exceed the limit of 30 requests per minute to the server.
-            If you do, you will get an HTTP 429 error */
-            setTimeout(() => {
-              if (addressData.isActive) {
-                return cb(null, addressData);
-              }
-              return cb();
-            }, 1000);
-          });
-        });
-      });
+      /* This timeout is because we must not exceed the limit of 30 requests per minute to the server.
+      If you do, you will get an HTTP 429 error */
+      setTimeout(() => {
+        if (addressData.isActive) {
+          return cb(null, addressData);
+        }
+        return cb();
+      }, 1000);
     });
   }
 
-  private checkAddress(address: any, coin: string, network: string): Promise<any> {
-    const addr = (coin === 'bch' && this.useCashAddr) ? address.toCashAddress().split(':')[1] : address.toString();
-    const url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '?noTxList=1';
-    return new Promise(resolve => {
-      resolve(this.http.get(url));
-    });
+  private getAddressInfo(address: any, coin: string, network: string): Observable<any> {
+    return Observable.forkJoin(
+      this.getAddressBalance(address, coin, network),
+      this.getAddressUtxos(address, coin, network)
+    ).pipe(map(([balance, utxos]) => {
+      return { balance, utxos };
+    }));
   }
 
-  private checkUtxos(address: any, coin: string, network: string): Promise<any> {
+  private getAddressBalance(address: any, coin: string, network: string): Observable<any> {
     const addr = (coin === 'bch' && this.useCashAddr) ? address.toCashAddress().split(':')[1] : address.toString();
-    const url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '/utxo?noCache=1';
-    return new Promise(resolve => {
-      resolve(this.http.get(url));
-    });
+    const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/balance';
+    return this.http.get<any>(url);
+  }
+
+  private getAddressUtxos(address: any, coin: string, network: string): Observable<any> {
+    const addr = (coin === 'bch' && this.useCashAddr) ? address.toCashAddress().split(':')[1] : address.toString();
+    const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?unspent=true&limit=9999';
+    return this.http.get<any>(url);
   }
 
   public createRawTx(toAddress: string, scanResults: any, wallet: any, fee: number): any {
@@ -446,7 +437,6 @@ export class RecoveryService {
     }
 
     const amount = parseInt((scanResults.balance * 1e8 - fee * 1e8).toFixed(0), 10);
-
     if (amount <= 0) {
       throw new Error('Funds are insufficient to complete the transaction');
     }
@@ -468,6 +458,9 @@ export class RecoveryService {
       _.each(scanResults.addresses, (address: any) => {
         if (address.utxo.length > 0) {
           _.each(address.utxo, (u) => {
+            u.txid = u.mintTxid;
+            u.outputIndex = u.mintIndex;
+            u.satoshis = u.value;
             if (wallet.addressType === 'P2SH') {
               tx.from(u, address.pubKeys, wallet.m);
             } else {
@@ -477,7 +470,6 @@ export class RecoveryService {
           });
         }
       });
-
 
       tx.to(toAddress, amount);
       tx.sign(_.uniq(privKeys));
@@ -490,14 +482,9 @@ export class RecoveryService {
     }
   }
 
-  // Todo: implement txBroadcast as a Promise
-  public txBroadcast(rawTx: string, coin: string, network: string): Promise<any> {
+  public txBroadcast(rawTx: string, coin: string, network: string): Observable<any> {
     const url = this.apiURI[coin + '/' + network] + 'tx/send';
     console.log('Posting tx to...' + url);
-    return new Promise(resolve => {
-      resolve(this.http.post(url, {
-        rawtx: rawTx
-      }));
-    });
+    return this.http.post<any>(url, { rawTx });
   }
 }

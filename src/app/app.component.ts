@@ -53,7 +53,7 @@ export class AppComponent implements OnInit {
       gap: this.addressGap
     };
     this.availableOptions = [1, 2, 3, 4, 5, 6];
-    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet'];
+    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'bch/testnet'];
     this.fee = 0.001;
     this.signaturesNumber = this.availableOptions[0];
     this.copayersNumber = this.availableOptions[0];
@@ -106,10 +106,10 @@ export class AppComponent implements OnInit {
     });
 
     if (this.chain.match(/bch/)) {
-      this.network = 'livenet';
+      this.network = this.chain.replace('bch/', '');
       this.coin = 'bch';
       this.fee = 0.0001;
-    }  else {
+    } else {
       this.network = this.chain.replace('btc/', '');
       this.coin = 'btc';
       this.fee = 0.001;
@@ -124,7 +124,7 @@ export class AppComponent implements OnInit {
     this.showMessage('Scanning funds...', 1);
 
     const reportFn = (currentGap, activeAddresses) => {
-      const balance = _.sumBy(_.flatten(_.map(activeAddresses, 'utxo')), 'amount');
+      const balance = _.sumBy(activeAddresses, 'balance');
       const balStr = balance.toFixed(8) + ' ';
       this.reportInactive = currentGap;
       this.reportAmount = balStr + ' ' + this.wallet.coin.toUpperCase();
@@ -170,7 +170,7 @@ export class AppComponent implements OnInit {
     };
   }
 
-  private sendFunds(destinationAddress: string, chain: string): void {
+  public sendFunds(destinationAddress: string, chain: string): void {
     // tslint:disable-next-line:max-line-length
     const confirmMessage = 'A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + (chain.substring(0, 3)).toUpperCase();
     if (!confirm(confirmMessage)) {
@@ -188,37 +188,37 @@ export class AppComponent implements OnInit {
     }
     this.done = true;
 
-    this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).then((response: any) => {
-      response.subscribe(resp => {
-        // tslint:disable-next-line:max-line-length
-        const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: ' + destinationAddress + '. Transaction ID:' + resp.txid ;
-        this.showMessage(message, 2);
-        this.broadcasted = true;
-        this.txid = resp.txid;
-        console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
-        console.log('Transaction id: ', this.txid);
-      });
-    }).catch(err => {
+    this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).subscribe((response: any) => {
+      const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: '
+        + destinationAddress + '. Transaction ID:' + response.txid;
+      this.showMessage(message, 2);
+      this.broadcasted = true;
+      this.txid = response.txid;
+      console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
+      console.log('Transaction id: ', this.txid);
+    }, () => {
       this.showMessage('Could not broadcast transaction. Please, try later. Raw Tx:' + rawTx, 3);
     });
   }
 
-  private viewOnBlockchain(): void {
-    let url;
+  public viewOnBlockchain(): void {
+    let url: string;
 
     switch (this.chain) {
       case 'btc/livenet':
-        url = 'https://insight.bitpay.com/tx/';
+        url = 'https://insight.bitcore.io/#/BTC/mainnet/tx/';
         break;
       case 'btc/testnet':
-        url = 'https://test-insight.bitpay.com/tx/';
+        url = 'https://insight.bitcore.io/#/BTC/testnet/tx/';
         break;
       case 'bch/livenet':
-//        url = 'https://bch-insight.bitpay.com/tx/';
-        url = 'https://blockdozer.com/tx/';
+        url = 'https://insight.bitcore.io/#/BCH/mainnet/tx/';
+        break;
+      case 'bch/testnet':
+        url = 'https://insight.bitcore.io/#/BCH/testnet/tx/';
         break;
       default:
-        url = 'https://insight.bitpay.com/tx/';
+        url = 'https://insight.bitcore.io/#/BTC/mainnet/tx/';
     }
 
     const win = window.open(url + this.txid, '_blank');
