@@ -26,6 +26,7 @@ export class RecoveryService {
     'bch/testnet': 'https://api.bitcore.io/api/BCH/testnet/'
   };
   public useCashAddr = true;
+  public activeAddrCoinType = '';
 
   constructor(
     private http: HttpClient
@@ -39,7 +40,7 @@ export class RecoveryService {
           'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'],
         },
         'bch': {
-          'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1', 'm/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1'],
+          'livenet': ['m/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1', 'm/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'],
           'testnet': ['m/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1']
         }
       }
@@ -301,7 +302,8 @@ export class RecoveryService {
     };
 
     const derive = (baseDerivation, index, callback) => {
-      if (inactiveCount > inGap) {
+      const path = baseDerivation.path || baseDerivation[0].path;
+      if (inactiveCount > inGap || path.match(this.activeAddrCoinType) === null) {
         return callback();
       }
 
@@ -312,7 +314,10 @@ export class RecoveryService {
         }
         if (!_.isEmpty(addressData)) {
           addressData.balance = addressData.balance * 1e-8;
-          console.log('#Active address:', addressData);
+          console.log('#Active address:', addressData, baseDerivation, wallet.network);
+          if (wallet.network === 'livenet' && wallet.coin === 'bch') {
+            this.activeAddrCoinType = baseDerivation[0].path.match(/m\/44\'\/145\'/) ? 'm/44\'/145\'' : 'm/44\'/0\'';
+          }
           activeAddress.push(addressData);
           inactiveCount = 0;
         } else {

@@ -77,6 +77,7 @@ export class AppComponent implements OnInit {
     this.destinationAddress = '';
     this.txid = null;
     this.checkAngularCryptoConfig();
+    this.RecoveryService.activeAddrCoinType = '';
   }
 
   private checkAngularCryptoConfig(): void {
