@@ -25,7 +25,6 @@ export class RecoveryService {
     'bch/livenet': 'https://api.bitcore.io/api/BCH/mainnet/',
     'bch/testnet': 'https://api.bitcore.io/api/BCH/testnet/'
   };
-  public useCashAddr = true;
   public activeAddrCoinType = '';
 
   constructor(
@@ -308,7 +307,7 @@ export class RecoveryService {
       }
 
       const address = this.generateAddress(wallet, baseDerivation, index);
-      this.getAddressData(address, wallet.coin, wallet.network, (err, addressData) => {
+      this.checkAddress(address, wallet.coin, wallet.network, (err, addressData) => {
         if (err) {
           return callback(err);
         }
@@ -384,22 +383,20 @@ export class RecoveryService {
     };
   }
 
-  private getAddressData(address: any, coin: string, network: string, cb: Function): any {
-    this.getAddressInfo(address.addressObject, coin, network).subscribe((res) => {
-      const addr = coin === 'bch' && this.useCashAddr
-        ? address.addressObject.toCashAddress().split(':')[1]
-        : address.addressObject.toString();
+  private checkAddress(address: any, coin: string, network: string, cb: Function): any {
+    const addr = address.addressObject.toString(true);
 
+    this.getAddressTxos(addr, coin, network).subscribe((txos) => {
+      const utxos = _.filter(txos, ['spentHeight', -2]);
       const addressData = {
         address: addr,
-        balance: res.balance.balance,
-        unconfirmedBalance: res.balance.unconfirmed,
-        utxo: res.utxos,
+        balance: _.sumBy(utxos, 'value'),
+        utxo: utxos,
         privKeys: address.privKeys,
         pubKeys: address.pubKeys,
         info: address.info,
         index: address.index,
-        isActive: res.balance.unconfirmed + res.balance.confirmed > 0,
+        isActive: txos.length > 0,
       };
       // TODO: Review this comment
       // $rootScope.$emit('progress', _.pick(addressData, 'info', 'address', 'isActive', 'balance'));
@@ -415,24 +412,8 @@ export class RecoveryService {
     });
   }
 
-  private getAddressInfo(address: any, coin: string, network: string): Observable<any> {
-    return Observable.forkJoin(
-      this.getAddressBalance(address, coin, network),
-      this.getAddressUtxos(address, coin, network)
-    ).pipe(map(([balance, utxos]) => {
-      return { balance, utxos };
-    }));
-  }
-
-  private getAddressBalance(address: any, coin: string, network: string): Observable<any> {
-    const addr = (coin === 'bch' && this.useCashAddr) ? address.toCashAddress().split(':')[1] : address.toString();
-    const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/balance';
-    return this.http.get<any>(url);
-  }
-
-  private getAddressUtxos(address: any, coin: string, network: string): Observable<any> {
-    const addr = (coin === 'bch' && this.useCashAddr) ? address.toCashAddress().split(':')[1] : address.toString();
-    const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?unspent=true&limit=9999';
+  private getAddressTxos(addr: string, coin: string, network: string): Observable<any> {
+    const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?limit=999';
     return this.http.get<any>(url);
   }
 

@@ -43,7 +43,7 @@ export class AppComponent implements OnInit {
   private txid: string;
 
   constructor(
-    private RecoveryService: RecoveryService
+    private recoveryService: RecoveryService
   ) {
     this.addressGap = 20;
     this.data = {
@@ -77,11 +77,11 @@ export class AppComponent implements OnInit {
     this.destinationAddress = '';
     this.txid = null;
     this.checkAngularCryptoConfig();
-    this.RecoveryService.activeAddrCoinType = '';
+    this.recoveryService.activeAddrCoinType = '';
   }
 
   private checkAngularCryptoConfig(): void {
-    const result = this.RecoveryService.checkAngularCryptoConfig();
+    const result = this.recoveryService.checkAngularCryptoConfig();
     if (result) {
       this.showMessage(result, 3);
     }
@@ -117,7 +117,7 @@ export class AppComponent implements OnInit {
     }
 
     try {
-      this.wallet = this.RecoveryService.getWallet(inputs, this.signaturesNumber, this.copayersNumber, this.coin, this.network);
+      this.wallet = this.recoveryService.getWallet(inputs, this.signaturesNumber, this.copayersNumber, this.coin, this.network);
     } catch (ex) {
       this.showLoadingSpinner = false;
       return this.showMessage(ex.message, 3);
@@ -135,7 +135,7 @@ export class AppComponent implements OnInit {
     let gap = +this.addressGap;
     gap = gap ? gap : 20;
 
-    this.RecoveryService.scanWallet(this.wallet, gap, reportFn, (err, res) => {
+    this.recoveryService.scanWallet(this.wallet, gap, reportFn, (err, res) => {
       if (err) {
         return this.showMessage(err, 3);
       }
@@ -183,13 +183,13 @@ export class AppComponent implements OnInit {
     this.showLoadingSpinner = true;
 
     try {
-      rawTx = this.RecoveryService.createRawTx(destinationAddress, this.scanResults, this.wallet, this.fee);
+      rawTx = this.recoveryService.createRawTx(destinationAddress, this.scanResults, this.wallet, this.fee);
     } catch (ex) {
       return this.showMessage(ex.message, 3);
     }
     this.done = true;
 
-    this.RecoveryService.txBroadcast(rawTx, this.coin, this.network).subscribe((response: any) => {
+    this.recoveryService.txBroadcast(rawTx, this.coin, this.network).subscribe((response: any) => {
       const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: '
         + destinationAddress + '. Transaction ID:' + response.txid;
       this.showMessage(message, 2);
