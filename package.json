@@ -21,20 +21,20 @@
     "@angular/platform-browser": "^4.0.0",
     "@angular/platform-browser-dynamic": "^4.0.0",
     "@angular/router": "^4.0.0",
-    "bitcore-lib": "^0.15.0",
-    "bitcore-lib-cash": "^0.16.3",
-    "bitcore-mnemonic": "^1.5.0",
+    "bitcore-lib": "^8.3.0",
+    "bitcore-lib-cash": "^8.3.0",
+    "bitcore-mnemonic": "^8.3.0",
     "bootstrap": "^4.1.0",
     "core-js": "^2.4.1",
     "lodash": "^4.17.4",
     "ngx-bootstrap": "^1.8.0",
-    "rxjs": "^5.1.0",
+    "rxjs": "^5.5.10",
     "sjcl": "^1.0.7",
     "zone.js": "^0.8.4"
   },
   "devDependencies": {
     "@angular/cli": "1.2.1",
-    "@angular/compiler-cli": "^4.0.0",
+    "@angular/compiler-cli": "^4.4.7",
     "@angular/language-service": "^4.0.0",
     "@types/jasmine": "~2.5.53",
     "@types/jasminewd2": "~2.0.2",
@@ -52,6 +52,6 @@
     "protractor": "~5.1.2",
     "ts-node": "~3.0.4",
     "tslint": "~5.3.2",
-    "typescript": "~2.3.3"
+    "typescript": "^3.4.5"
   }
 }
