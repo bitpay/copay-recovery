@@ -3,13 +3,13 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "postinstall": "sed -i -e \"s/crypto: 'empty'/crypto: true/g\" node_modules/@angular/cli/models/webpack-configs/common.js",
+    "postinstall": "sed -i -e \"s/crypto: 'empty'/crypto: true/g\" node_modules/@angular/cli/models/webpack-configs/common.js; sed -i -e \"s/let/var/g\" node_modules/base-x/index.js",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
     "test": "ng test",
     "lint": "ng lint",
-    "publish": "ng build --prod --aot=false --base-href 'https://bitpay.github.io/copay-recovery/'"
+    "publish": "ng build --prod --aot=true --base-href 'https://bitpay.github.io/copay-recovery/'"
   },
   "private": true,
   "dependencies": {
@@ -41,6 +41,7 @@
     "@types/jasminewd2": "~2.0.2",
     "@types/lodash": "^4.14.71",
     "@types/node": "~6.0.60",
+    "codelyzer": "~3.0.1",
     "jasmine-core": "~2.6.2",
     "jasmine-spec-reporter": "~4.1.0",
     "karma": "~1.7.0",

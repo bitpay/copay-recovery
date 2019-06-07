@@ -132,7 +132,7 @@ export class AppComponent implements OnInit {
 
     const reportFn = (currentGap, activeAddresses) => {
       let balance;
-      if (this.coin == 'bsv') {
+      if (this.coin === 'bsv') {
         // Use OLD Insight
         balance = _.sumBy(_.flatten(_.map(activeAddresses, 'utxo')), 'amount');
       } else {
@@ -205,7 +205,7 @@ export class AppComponent implements OnInit {
     this.done = true;
 
     this.recoveryService.txBroadcast(rawTx, this.coin, this.network).subscribe((response: any) => {
-      this.txid = this.coin == 'bsv' ? response.data.transaction_hash : response.txid;
+      this.txid = this.coin === 'bsv' ? response.data.transaction_hash : response.txid;
       const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: '
         + destinationAddress + '. Transaction ID:' + this.txid;
       this.showMessage(message, 2);
