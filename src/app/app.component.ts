@@ -53,7 +53,7 @@ export class AppComponent implements OnInit {
       gap: this.addressGap
     };
     this.availableOptions = [1, 2, 3, 4, 5, 6];
-    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'bch/testnet'];
+    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'bch/testnet', 'bsv/livenet'];
     this.fee = 0.001;
     this.signaturesNumber = this.availableOptions[0];
     this.copayersNumber = this.availableOptions[0];
@@ -112,6 +112,10 @@ export class AppComponent implements OnInit {
       this.network = this.chain.replace('bch/', '');
       this.coin = 'bch';
       this.fee = 0.0001;
+    } else if (this.chain.match(/bsv/)) {
+      this.network = this.chain.replace('bsv/', '');
+      this.coin = 'bsv';
+      this.fee = 0.0001;
     } else {
       this.network = this.chain.replace('btc/', '');
       this.coin = 'btc';
@@ -127,7 +131,13 @@ export class AppComponent implements OnInit {
     this.showMessage('Scanning funds...', 1);
 
     const reportFn = (currentGap, activeAddresses) => {
-      const balance = _.sumBy(activeAddresses, 'balance');
+      let balance;
+      if (this.coin == 'bsv') {
+        // Use OLD Insight
+        balance = _.sumBy(_.flatten(_.map(activeAddresses, 'utxo')), 'amount');
+      } else {
+        balance = _.sumBy(activeAddresses, 'balance');
+      }
       const balStr = balance.toFixed(8) + ' ';
       this.reportInactive = currentGap;
       this.reportAmount = balStr + ' ' + this.wallet.coin.toUpperCase();
@@ -137,7 +147,7 @@ export class AppComponent implements OnInit {
     let gap = +this.addressGap;
     gap = gap ? gap : 20;
 
-    this.recoveryService.scanWallet(this.wallet, gap, reportFn, (err, res) => {
+    this.recoveryService.scanWallet(this.wallet, this.coin, gap, reportFn, (err, res) => {
       if (err) {
         const error = err.message ? err.message : err;
         return this.showMessage(error, 3);
@@ -195,11 +205,11 @@ export class AppComponent implements OnInit {
     this.done = true;
 
     this.recoveryService.txBroadcast(rawTx, this.coin, this.network).subscribe((response: any) => {
+      this.txid = this.coin == 'bsv' ? response.data.transaction_hash : response.txid;
       const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: '
-        + destinationAddress + '. Transaction ID:' + response.txid;
+        + destinationAddress + '. Transaction ID:' + this.txid;
       this.showMessage(message, 2);
       this.broadcasted = true;
-      this.txid = response.txid;
       console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
       console.log('Transaction id: ', this.txid);
     }, () => {
@@ -222,6 +232,9 @@ export class AppComponent implements OnInit {
         break;
       case 'bch/testnet':
         url = 'https://insight.bitcore.io/#/BCH/testnet/tx/';
+        break;
+      case 'bsv/livenet':
+        url = 'https://bchsvexplorer.com/tx/';
         break;
       default:
         url = 'https://insight.bitcore.io/#/BTC/mainnet/tx/';
