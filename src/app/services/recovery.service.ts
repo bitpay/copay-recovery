@@ -209,7 +209,7 @@ export class RecoveryService {
       utxos = _.flatten(_.map(addresses, 'utxo'));
       const result = {
         addresses: _.uniq(addresses),
-        balance: coin == 'bsv' ? _.sumBy(utxos, 'amount') : _.sumBy(addresses, 'balance'),
+        balance: coin === 'bsv' ? _.sumBy(utxos, 'amount') : _.sumBy(addresses, 'balance'),
       };
       return cb(null, result);
     });
@@ -392,8 +392,11 @@ export class RecoveryService {
   }
 
   private checkAddressData(address: any, coin: string, network: string, cb: Function) {
-    if (coin == 'bsv') this.getAddressDataBsv(address, coin, network, cb);
-    else this.checkAddress(address, coin, network, cb);
+    if (coin === 'bsv') {
+      this.getAddressDataBsv(address, coin, network, cb);
+    } else {
+      this.checkAddress(address, coin, network, cb);
+    }
   }
 
   private getBsvAddressFromLegacy(address: string): string {
@@ -410,9 +413,9 @@ export class RecoveryService {
         this.getAddressTxos(address.addressObject.toCashAddress(), coin, network).subscribe((respUtxoData: any) => {
 
           // Old insight returns address in Legacy format
-          let addr = this.getBsvAddressFromLegacy(respAddress.addrStr);
+          const addr = this.getBsvAddressFromLegacy(respAddress.addrStr);
 
-          let cashFormatUtxo = [];
+          const cashFormatUtxo = [];
           respUtxoData.forEach((utxo) => {
             utxo.address = this.getBsvAddressFromLegacy(utxo.address);
             cashFormatUtxo.push(utxo);
@@ -482,7 +485,7 @@ export class RecoveryService {
 
   private getAddressTxos(addr: string, coin: string, network: string): Observable<any> {
     let url;
-    if (coin == 'bsv') {
+    if (coin === 'bsv') {
       url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '/utxo?noCache=1';
     } else {
       url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?limit=999';
@@ -506,6 +509,7 @@ export class RecoveryService {
 
     try {
       const checkAddress = new this.bitcore.Address(toAddress, wallet.network);
+      console.log('Check address: ', checkAddress);
     } catch (ex) {
       console.log(ex);
       throw new Error('Incorrect destination address network');
@@ -519,7 +523,7 @@ export class RecoveryService {
       _.each(scanResults.addresses, (address: any) => {
         if (address.utxo.length > 0) {
           _.each(address.utxo, (u) => {
-            if (wallet.coin != 'bsv') {
+            if (wallet.coin !== 'bsv') {
               u.txid = u.mintTxid;
               u.outputIndex = u.mintIndex;
               u.satoshis = u.value;
@@ -547,7 +551,7 @@ export class RecoveryService {
 
   public txBroadcast(rawTx: string, coin: string, network: string): Observable<any> {
     let url, data;
-    if (coin == 'bsv') {
+    if (coin === 'bsv') {
       url = 'https://api.blockchair.com/bitcoin-sv/push/transaction';
       data = { data: rawTx };
     } else {
