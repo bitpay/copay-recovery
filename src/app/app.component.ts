@@ -61,7 +61,6 @@ export class AppComponent implements OnInit {
     this.statusMessage = null;
     this.successMessage = null;
     this.errorMessage = null;
-    this.showLoadingSpinner = false;
     this.done = false;
     this.broadcasted = false;
     this.insufficentsFunds = false;
@@ -78,6 +77,8 @@ export class AppComponent implements OnInit {
     this.txid = null;
     this.checkAngularCryptoConfig();
     this.recoveryService.activeAddrCoinType = '';
+    this.showLoadingSpinner = false;
+    this.recoveryService.stopSearching = true;
   }
 
   private checkAngularCryptoConfig(): void {
@@ -97,6 +98,7 @@ export class AppComponent implements OnInit {
     this.hideMessage();
     this.showLoadingSpinner = true;
     this.beforeScan = true;
+    this.recoveryService.stopSearching = false;
 
     const inputs = _.map(_.range(1, this.copayersNumber + 1), (i) => {
       return {
@@ -137,22 +139,25 @@ export class AppComponent implements OnInit {
 
     this.recoveryService.scanWallet(this.wallet, gap, reportFn, (err, res) => {
       if (err) {
-        return this.showMessage(err, 3);
+        const error = err.message ? err.message : err;
+        return this.showMessage(error, 3);
       }
 
       this.scanResults = res;
       console.log('## Total balance:', this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase());
 
-      this.showMessage('Search completed', 2);
-      this.showLoadingSpinner = false;
-      this.beforeScan = false;
-      this.totalBalance = this.scanResults.balance.toFixed(8);
-      this.totalBalanceStr = 'Available balance: ' + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
-      if ((this.scanResults.balance - this.fee) <= 0) {
-        if (this.scanResults.balance > 0) {
-          this.totalBalanceStr += '. Insufficient funds.';
+      if (!this.recoveryService.stopSearching) {
+        this.showMessage('Search completed', 2);
+        this.showLoadingSpinner = false;
+        this.beforeScan = false;
+        this.totalBalance = this.scanResults.balance.toFixed(8);
+        this.totalBalanceStr = 'Available balance: ' + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
+        if ((this.scanResults.balance - this.fee) <= 0) {
+          if (this.scanResults.balance > 0) {
+            this.totalBalanceStr += '. Insufficient funds.';
+          }
+          this.insufficentsFunds = true;
         }
-        this.insufficentsFunds = true;
       }
     });
   }

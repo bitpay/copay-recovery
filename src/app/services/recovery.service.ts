@@ -7,12 +7,9 @@ import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
 import * as Mnemonic from 'bitcore-mnemonic';
 import * as _ from 'lodash';
-import {
-  HttpClient
-} from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs/Observable';
-import { map } from 'rxjs/operators';
-import 'rxjs/add/observable/forkJoin';
+import 'rxjs/add/operator/catch';
 
 @Injectable()
 export class RecoveryService {
@@ -26,6 +23,7 @@ export class RecoveryService {
     'bch/testnet': 'https://api.bitcore.io/api/BCH/testnet/'
   };
   public activeAddrCoinType = '';
+  public stopSearching = false;
 
   constructor(
     private http: HttpClient
@@ -301,6 +299,10 @@ export class RecoveryService {
     };
 
     const derive = (baseDerivation, index, callback) => {
+      if (this.stopSearching) {
+        return callback(null);
+      }
+
       const path = baseDerivation.path || baseDerivation[0].path;
       if (inactiveCount > inGap || path.match(this.activeAddrCoinType) === null) {
         return callback();
@@ -409,12 +411,16 @@ export class RecoveryService {
         }
         return cb();
       }, 1000);
+    }, err => {
+      return cb(err);
     });
   }
 
   private getAddressTxos(addr: string, coin: string, network: string): Observable<any> {
     const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?limit=999';
-    return this.http.get<any>(url);
+    return this.http.get<any>(url).catch(err => {
+      throw err;
+    });
   }
 
   public createRawTx(toAddress: string, scanResults: any, wallet: any, fee: number): any {
@@ -471,6 +477,8 @@ export class RecoveryService {
   public txBroadcast(rawTx: string, coin: string, network: string): Observable<any> {
     const url = this.apiURI[coin + '/' + network] + 'tx/send';
     console.log('Posting tx to...' + url);
-    return this.http.post<any>(url, { rawTx });
+    return this.http.post<any>(url, { rawTx }).catch(err => {
+      throw err;
+    });
   }
 }
