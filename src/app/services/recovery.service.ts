@@ -20,7 +20,8 @@ export class RecoveryService {
     'btc/livenet': 'https://api.bitcore.io/api/BTC/mainnet/',
     'btc/testnet': 'https://api.bitcore.io/api/BTC/testnet/',
     'bch/livenet': 'https://api.bitcore.io/api/BCH/mainnet/',
-    'bch/testnet': 'https://api.bitcore.io/api/BCH/testnet/'
+    'bch/testnet': 'https://api.bitcore.io/api/BCH/testnet/',
+    'bsv/livenet': 'https://bchsvexplorer.com/api/',
   };
   public activeAddrCoinType = '';
   public stopSearching = false;
@@ -39,6 +40,9 @@ export class RecoveryService {
         'bch': {
           'livenet': ['m/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1', 'm/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'],
           'testnet': ['m/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1']
+        },
+        'bsv': {
+          'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1', 'm/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1']
         }
       }
     };
@@ -186,7 +190,7 @@ export class RecoveryService {
 
     if (coin === 'btc') {
       this.bitcore = bitcoreLib;
-    } else if (coin === 'bch') {
+    } else if (coin === 'bch' || coin === 'bsv') {
       this.bitcore = bitcoreLibCash;
     } else {
       throw new Error('Unknown coin ' + coin);
@@ -195,15 +199,17 @@ export class RecoveryService {
     return this.buildWallet(credentials);
   }
 
-  public scanWallet(wallet: any, inGap: number, reportFn: Function, cb: Function): any {
+  public scanWallet(wallet: any, coin: string, inGap: number, reportFn: Function, cb: Function): any {
+    let utxos: Array<any>;
     // getting main addresses
     this.getActiveAddresses(wallet, inGap, reportFn, (err, addresses) => {
       if (err) {
         return cb(err);
       }
+      utxos = _.flatten(_.map(addresses, 'utxo'));
       const result = {
         addresses: _.uniq(addresses),
-        balance: _.sumBy(addresses, 'balance'),
+        balance: coin == 'bsv' ? _.sumBy(utxos, 'amount') : _.sumBy(addresses, 'balance'),
       };
       return cb(null, result);
     });
@@ -309,7 +315,7 @@ export class RecoveryService {
       }
 
       const address = this.generateAddress(wallet, baseDerivation, index);
-      this.checkAddress(address, wallet.coin, wallet.network, (err, addressData) => {
+      this.checkAddressData(address, wallet.coin, wallet.network, (err, addressData) => {
         if (err) {
           return callback(err);
         }
@@ -317,7 +323,7 @@ export class RecoveryService {
           addressData.balance = addressData.balance * 1e-8;
           console.log('#Active address:', addressData, baseDerivation, wallet.network);
           if (wallet.network === 'livenet' && wallet.coin === 'bch') {
-            this.activeAddrCoinType = baseDerivation[0].path.match(/m\/44\'\/145\'/) ? 'm/44\'/145\'' : 'm/44\'/0\'';
+            this.activeAddrCoinType = baseDerivation.path.match(/m\/44\'\/145\'/) ? 'm/44\'/145\'' : 'm/44\'/0\'';
           }
           activeAddress.push(addressData);
           inactiveCount = 0;
@@ -385,6 +391,66 @@ export class RecoveryService {
     };
   }
 
+  private checkAddressData(address: any, coin: string, network: string, cb: Function) {
+    if (coin == 'bsv') this.getAddressDataBsv(address, coin, network, cb);
+    else this.checkAddress(address, coin, network, cb);
+  }
+
+  private getBsvAddressFromLegacy(address: string): string {
+    const obj = bitcoreLib.Address(address).toObject();
+    return this.bitcore.Address.fromObject(obj).toString(true);
+  }
+
+  private getAddressDataBsv(address: any, coin: string, network: string, cb: Function): any {
+    // call insight API to get address information
+    this.checkAddressBsv(address.addressObject, coin, network).then((respAddressObs: any) => {
+
+      respAddressObs.subscribe(respAddress => {
+        // call insight API to get utxo information
+        this.getAddressTxos(address.addressObject.toCashAddress(), coin, network).subscribe((respUtxoData: any) => {
+
+          // Old insight returns address in Legacy format
+          let addr = this.getBsvAddressFromLegacy(respAddress.addrStr);
+
+          let cashFormatUtxo = [];
+          respUtxoData.forEach((utxo) => {
+            utxo.address = this.getBsvAddressFromLegacy(utxo.address);
+            cashFormatUtxo.push(utxo);
+          });
+
+          const addressData = {
+            address: addr,
+            balance: respAddress.balance,
+            unconfirmedBalance: respAddress.unconfirmedBalance,
+            utxo: cashFormatUtxo,
+            privKeys: address.privKeys,
+            pubKeys: address.pubKeys,
+            info: address.info,
+            index: address.index,
+            isActive: respAddress.unconfirmedTxApperances + respAddress.txApperances > 0,
+          };
+
+          /* This timeout is because we must not exceed the limit of 30 requests per minute to the server.
+          If you do, you will get an HTTP 429 error */
+          setTimeout(() => {
+            if (addressData.isActive) {
+              return cb(null, addressData);
+            }
+            return cb();
+          }, 1000);
+        });
+      });
+    });
+  }
+
+  private checkAddressBsv(address: any, coin: string, network: string): Promise<any> {
+    const addr = address.toString();
+    const url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '?noTxList=1';
+    return new Promise(resolve => {
+      resolve(this.http.get(url));
+    });
+  }
+
   private checkAddress(address: any, coin: string, network: string, cb: Function): any {
     const addr = address.addressObject.toString(true);
 
@@ -400,8 +466,6 @@ export class RecoveryService {
         index: address.index,
         isActive: txos.length > 0,
       };
-      // TODO: Review this comment
-      // $rootScope.$emit('progress', _.pick(addressData, 'info', 'address', 'isActive', 'balance'));
 
       /* This timeout is because we must not exceed the limit of 30 requests per minute to the server.
       If you do, you will get an HTTP 429 error */
@@ -417,7 +481,12 @@ export class RecoveryService {
   }
 
   private getAddressTxos(addr: string, coin: string, network: string): Observable<any> {
-    const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?limit=999';
+    let url;
+    if (coin == 'bsv') {
+      url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '/utxo?noCache=1';
+    } else {
+      url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?limit=999';
+    }
     return this.http.get<any>(url).catch(err => {
       throw err;
     });
@@ -450,9 +519,11 @@ export class RecoveryService {
       _.each(scanResults.addresses, (address: any) => {
         if (address.utxo.length > 0) {
           _.each(address.utxo, (u) => {
-            u.txid = u.mintTxid;
-            u.outputIndex = u.mintIndex;
-            u.satoshis = u.value;
+            if (wallet.coin != 'bsv') {
+              u.txid = u.mintTxid;
+              u.outputIndex = u.mintIndex;
+              u.satoshis = u.value;
+            }
             if (wallet.addressType === 'P2SH') {
               tx.from(u, address.pubKeys, wallet.m);
             } else {
@@ -475,9 +546,16 @@ export class RecoveryService {
   }
 
   public txBroadcast(rawTx: string, coin: string, network: string): Observable<any> {
-    const url = this.apiURI[coin + '/' + network] + 'tx/send';
+    let url, data;
+    if (coin == 'bsv') {
+      url = 'https://api.blockchair.com/bitcoin-sv/push/transaction';
+      data = { data: rawTx };
+    } else {
+      url = this.apiURI[coin + '/' + network] + 'tx/send';
+      data = { rawTx: rawTx };
+    }
     console.log('Posting tx to...' + url);
-    return this.http.post<any>(url, { rawTx }).catch(err => {
+    return this.http.post<any>(url, data).catch(err => {
       throw err;
     });
   }
