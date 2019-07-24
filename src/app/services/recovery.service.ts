@@ -190,7 +190,7 @@ export class RecoveryService {
 
     if (coin === 'btc') {
       this.bitcore = bitcoreLib;
-    } else if (coin === 'bch' || coin === 'bsv') {
+    } else if (coin === 'bch' || coin === 'bsv') {
       this.bitcore = bitcoreLibCash;
     } else {
       throw new Error('Unknown coin ' + coin);
@@ -215,7 +215,7 @@ export class RecoveryService {
     });
   }
 
-  private getPaths(wallet: any): string {
+  private getPaths(wallet: any): Array<any> {
     if (wallet.derivationStrategy === 'BIP45') {
       let p = _.clone(this.PATHS[wallet.derivationStrategy]);
       // adds copayer's paths
@@ -226,7 +226,23 @@ export class RecoveryService {
       return p;
     }
     if (wallet.derivationStrategy === 'BIP44') {
-      return this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network];
+      if (wallet.n > 1) {
+        // add purpose 48 for new multisig wallets
+        const multisigDerivationStrategy = {
+          'btc': {
+            'testnet': ['m/48\'/1\'/0\'/0', 'm/48\'/1\'/0\'/1'],
+            'livenet': ['m/48\'/0\'/0\'/0', 'm/48\'/0\'/0\'/1'],
+          },
+          'bch': {
+            'livenet': ['m/48\'/145\'/0\'/0', 'm/48\'/145\'/0\'/1'],
+            'testnet': ['m/48\'/1\'/0\'/0', 'm/48\'/1\'/0\'/1']
+          }
+        };
+        // tslint:disable-next-line:max-line-length
+        return _.concat(this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network], multisigDerivationStrategy[wallet.coin][wallet.network]);
+      } else {
+        return this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network];
+      }
     }
   }
 
@@ -323,7 +339,13 @@ export class RecoveryService {
           addressData.balance = addressData.balance * 1e-8;
           console.log('#Active address:', addressData, baseDerivation, wallet.network);
           if (wallet.network === 'livenet' && wallet.coin === 'bch') {
-            this.activeAddrCoinType = baseDerivation.path.match(/m\/44\'\/145\'/) ? 'm/44\'/145\'' : 'm/44\'/0\'';
+            if (baseDerivation[0].path.match(/m\/44\'\/145\'/)) {
+              this.activeAddrCoinType = 'm/44\'/145\'';
+            } else if (baseDerivation[0].path.match(/m\/44\'\/0\'/)) {
+              this.activeAddrCoinType = 'm/44\'/0\'';
+            } else if (baseDerivation[0].path.match(/m\/48\'\/145\'/)) {
+              this.activeAddrCoinType = 'm/48\'/145\'';
+            }
           }
           activeAddress.push(addressData);
           inactiveCount = 0;
