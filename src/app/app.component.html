@@ -55,8 +55,7 @@
 
             <div class="form-group copayers">
               <label for="copayersNumber">Total number of Copayers</label>
-              <select class="form-control" id="copayersNumber" name="copayersNumber" [(ngModel)]="copayersNumber"
-                (ngModelChange)="updateCopayersForm($event)">
+              <select class="form-control" id="copayersNumber" name="copayersNumber" [(ngModel)]="copayersNumber" (ngModelChange)="updateCopayersForm($event)">
                 <option *ngFor="let option of availableOptions" [ngValue]="option">{{option}}</option>
               </select>
             </div>
@@ -75,17 +74,22 @@
               </select>
               <div class="chain-logo-container">
                 <img src="assets/img/icon-btc.svg" class="chain-logo" *ngIf="chain == 'btc/livenet'">
-                <img src="assets/img/icon-testnet.svg" class="chain-logo"
-                  *ngIf="chain == 'btc/testnet' || chain == 'bch/testnet'">
+                <img src="assets/img/icon-testnet.svg" class="chain-logo" *ngIf="chain == 'btc/testnet' || chain == 'bch/testnet'">
                 <img src="assets/img/icon-bch.svg" class="chain-logo" *ngIf="chain == 'bch/livenet'">
               </div>
             </div>
           </div>
 
-          <div class="form-group col-sm-6 col-xs-12">
-            <label for="addressGap">Address Gap</label><small> (Usually does not need to be changed)</small>
-            <input type="number" class="form-control" id="addressGap" name="addressGap" [(ngModel)]="addressGap"
-              required>
+          <div class="form-group col-sm-3 col-xs-12">
+            <label for="addressGap">Address Gap*</label>
+            <input type="number" min="0" class="form-control" id="addressGap" name="addressGap" [(ngModel)]="addressGap" required>
+          </div>
+          <div class="form-group col-sm-3 col-xs-12">
+            <label for="account">Account*</label>
+            <input type="number" min="0" class="form-control" id="account" name="account" [(ngModel)]="account" required>
+          </div>
+          <div class="col-sm-6 offset-sm-6 col-xs-12">
+            <small>*Usually does not need to be changed</small>
           </div>
         </div>
       </div>
@@ -97,28 +101,24 @@
         <div class="row">
           <div class="form-group col-sm-6">
             <label for="dataBackUp">Recovery phrase (mnemonic) or File/Text backup</label>
-            <input type="text" class="form-control" id="dataBackUp-{{copayer}}" name="dataBackUp-{{copayer}}"
-              [(ngModel)]="data.backUp[copayer]" autocomplete="off">
+            <input type="text" class="form-control" id="dataBackUp-{{copayer}}" name="dataBackUp-{{copayer}}" [(ngModel)]="data.backUp[copayer]" autocomplete="off">
           </div>
 
           <div class="form-group col-sm-6">
             <label for="contentFile">Or upload a File/Text backup:</label>
-            <input type="file" class="form-control-file" id="contentFile" name="contentFile" accept=".json, .txt"
-              aria-describedby="contentFileHelp" (change)="fileChangeEvent($event, copayer)">
+            <input type="file" class="form-control-file" id="contentFile" name="contentFile" accept=".json, .txt" aria-describedby="contentFileHelp" (change)="fileChangeEvent($event, copayer)">
             <small id="fileHelp" class="form-text text-muted">Extensions accepted: .json and .txt</small>
           </div>
         </div>
 
         <div class="form-group">
           <label for="dataPass">Backup password:</label><small> (in case you have one)</small>
-          <input type="password" class="form-control" id="dataPass-{{copayer}}" name="dataPass-{{copayer}}"
-            [(ngModel)]="data.pass[copayer]" autocomplete="off">
+          <input type="password" class="form-control" id="dataPass-{{copayer}}" name="dataPass-{{copayer}}" [(ngModel)]="data.pass[copayer]" autocomplete="off">
         </div>
 
         <div class="form-group">
           <label for="dataPassX">Encrypted private key password</label><small> (encrypt password)</small>
-          <input type="password" class="form-control" id="dataPassX-{{copayer}}" name="dataPassX-{{copayer}}"
-            [(ngModel)]="data.passX[copayer]" autocomplete="off">
+          <input type="password" class="form-control" id="dataPassX-{{copayer}}" name="dataPassX-{{copayer}}" [(ngModel)]="data.passX[copayer]" autocomplete="off">
         </div>
       </div>
     </div>
@@ -131,8 +131,7 @@
       </label>
     </div>
 
-    <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner || !termsAccepted"
-      class="btn btn-primary btn-lg btn-block">
+    <button type="submit" [disabled]="!processInputsForm.form.valid  || showLoadingSpinner || !termsAccepted" class="btn btn-primary btn-lg btn-block">
       <span *ngIf="chain == 'btc/livenet' || chain == 'btc/testnet'">Scan BTC Wallet</span>
       <span *ngIf="chain == 'bch/livenet' || chain == 'bch/testnet'">Scan BCH Wallet</span>
       <span *ngIf="chain == 'bsv/livenet'">Scan BSV Wallet</span>
@@ -145,17 +144,14 @@
         <h6 class="card-title">{{totalBalanceStr}}</h6>
         <div class="input-group" *ngIf="!insufficentsFunds">
           <div class="input-group-addon">Destination Address:</div>
-          <input type="text" class="form-control" id="destinationAddress" name="destinationAddress"
-            [(ngModel)]="destinationAddress" required>
+          <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress" required>
         </div>
       </div>
     </div>
-    <button type="submit" *ngIf="!insufficentsFunds" [disabled]="!sendFundsForm.form.valid || showLoadingSpinner"
-      class="btn btn-primary btn-lg btn-block">Transfer</button>
+    <button type="submit" *ngIf="!insufficentsFunds" [disabled]="!sendFundsForm.form.valid || showLoadingSpinner" class="btn btn-primary btn-lg btn-block">Transfer</button>
   </form>
 
-  <button type="button" (click)="viewOnBlockchain()" *ngIf="broadcasted"
-    class="btn btn-outline-primary btn-lg btn-block">View on blockchain</button>
+  <button type="button" (click)="viewOnBlockchain()" *ngIf="broadcasted" class="btn btn-outline-primary btn-lg btn-block">View on blockchain</button>
   <button type="button" (click)="ngOnInit()" *ngIf="!beforeScan" class="btn btn-outline-primary btn-lg btn-block">Go
     back</button>
 
