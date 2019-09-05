@@ -35,29 +35,29 @@ export class RecoveryService {
       'BIP44': {
         'btc': {
           'testnet': [
-            'm/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1',
-            'm/48\'/1\'/0\'/0', 'm/48\'/1\'/0\'/1'
+            'm/44\'/1\'/ACCOUNT\'/0', 'm/44\'/1\'/ACCOUNT\'/1',
+            'm/48\'/1\'/ACCOUNT\'/0', 'm/48\'/1\'/ACCOUNT\'/1'
           ],
           'livenet': [
-            'm/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1',
-            'm/48\'/0\'/0\'/0', 'm/48\'/0\'/0\'/1'
+            'm/44\'/0\'/ACCOUNT\'/0', 'm/44\'/0\'/ACCOUNT\'/1',
+            'm/48\'/0\'/ACCOUNT\'/0', 'm/48\'/0\'/ACCOUNT\'/1'
           ],
         },
         'bch': {
           'livenet': [
-            'm/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1',
-            'm/48\'/145\'/0\'/0', 'm/48\'/145\'/0\'/1',
-            'm/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'
+            'm/44\'/145\'/ACCOUNT\'/0', 'm/44\'/145\'/ACCOUNT\'/1',
+            'm/48\'/145\'/ACCOUNT\'/0', 'm/48\'/145\'/ACCOUNT\'/1',
+            'm/44\'/0\'/ACCOUNT\'/0', 'm/44\'/0\'/ACCOUNT\'/1'
           ],
           'testnet': [
-            'm/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1',
-            'm/48\'/1\'/0\'/0', 'm/48\'/1\'/0\'/1'
+            'm/44\'/1\'/ACCOUNT\'/0', 'm/44\'/1\'/ACCOUNT\'/1',
+            'm/48\'/1\'/ACCOUNT\'/0', 'm/48\'/1\'/ACCOUNT\'/1'
           ]
         },
         'bsv': {
           'livenet': [
-            'm/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1',
-            'm/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1'
+            'm/44\'/0\'/ACCOUNT\'/0', 'm/44\'/0\'/ACCOUNT\'/1',
+            'm/44\'/145\'/ACCOUNT\'/0', 'm/44\'/145\'/ACCOUNT\'/1'
           ]
         }
       }
@@ -249,7 +249,7 @@ export class RecoveryService {
 
   private setAccount(wallet, account: number) {
     this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network].forEach((path, i) => {
-      this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network][i] = path.replace(/(0')(?!.0')/gm, `${account}'`);
+      this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network][i] = path.replace(/ACCOUNT/, `${account}`);
     });
   }
 
