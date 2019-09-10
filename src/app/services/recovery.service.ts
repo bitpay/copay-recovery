@@ -232,7 +232,6 @@ export class RecoveryService {
   }
 
   private getPaths(wallet: any, account: number): string {
-    this.setAccount(wallet, account);
     if (wallet.derivationStrategy === 'BIP45') {
       let p = _.clone(this.PATHS[wallet.derivationStrategy]);
       // adds copayer's paths
@@ -243,6 +242,7 @@ export class RecoveryService {
       return p;
     }
     if (wallet.derivationStrategy === 'BIP44') {
+      this.setAccount(wallet, account);
       return this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network];
     }
   }
