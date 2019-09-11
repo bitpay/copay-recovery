@@ -18,6 +18,7 @@ export class AppComponent implements OnInit {
   public network: string;
   public coin: string;
   public addressGap: number;
+  public account: number;
   public beforeScan: boolean;
   public copayers = [1];
   public data: any;
@@ -46,6 +47,7 @@ export class AppComponent implements OnInit {
     private recoveryService: RecoveryService
   ) {
     this.addressGap = 20;
+    this.account = 0;
     this.data = {
       backUp: [],
       pass: [],
@@ -147,7 +149,7 @@ export class AppComponent implements OnInit {
     let gap = +this.addressGap;
     gap = gap ? gap : 20;
 
-    this.recoveryService.scanWallet(this.wallet, this.coin, gap, reportFn, (err, res) => {
+    this.recoveryService.scanWallet(this.wallet, this.coin, gap, this.account, reportFn, (err, res) => {
       if (err) {
         const error = err.message ? err.message : err;
         return this.showMessage(error, 3);

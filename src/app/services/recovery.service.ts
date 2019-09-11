@@ -34,15 +34,31 @@ export class RecoveryService {
       'BIP45': ['m/45\'/2147483647/0', 'm/45\'/2147483647/1'],
       'BIP44': {
         'btc': {
-          'testnet': ['m/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1'],
-          'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'],
+          'testnet': [
+            'm/44\'/1\'/ACCOUNT\'/0', 'm/44\'/1\'/ACCOUNT\'/1',
+            'm/48\'/1\'/ACCOUNT\'/0', 'm/48\'/1\'/ACCOUNT\'/1'
+          ],
+          'livenet': [
+            'm/44\'/0\'/ACCOUNT\'/0', 'm/44\'/0\'/ACCOUNT\'/1',
+            'm/48\'/0\'/ACCOUNT\'/0', 'm/48\'/0\'/ACCOUNT\'/1'
+          ],
         },
         'bch': {
-          'livenet': ['m/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1', 'm/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1'],
-          'testnet': ['m/44\'/1\'/0\'/0', 'm/44\'/1\'/0\'/1']
+          'livenet': [
+            'm/44\'/145\'/ACCOUNT\'/0', 'm/44\'/145\'/ACCOUNT\'/1',
+            'm/48\'/145\'/ACCOUNT\'/0', 'm/48\'/145\'/ACCOUNT\'/1',
+            'm/44\'/0\'/ACCOUNT\'/0', 'm/44\'/0\'/ACCOUNT\'/1'
+          ],
+          'testnet': [
+            'm/44\'/1\'/ACCOUNT\'/0', 'm/44\'/1\'/ACCOUNT\'/1',
+            'm/48\'/1\'/ACCOUNT\'/0', 'm/48\'/1\'/ACCOUNT\'/1'
+          ]
         },
         'bsv': {
-          'livenet': ['m/44\'/0\'/0\'/0', 'm/44\'/0\'/0\'/1', 'm/44\'/145\'/0\'/0', 'm/44\'/145\'/0\'/1']
+          'livenet': [
+            'm/44\'/0\'/ACCOUNT\'/0', 'm/44\'/0\'/ACCOUNT\'/1',
+            'm/44\'/145\'/ACCOUNT\'/0', 'm/44\'/145\'/ACCOUNT\'/1'
+          ]
         }
       }
     };
@@ -55,6 +71,7 @@ export class RecoveryService {
       console.log(ex);
       throw new Error('JSON invalid. Please copy only the text within (and including) the { } brackets around it.');
     }
+
     let payload;
     try {
       payload = sjcl.decrypt(data.password, data.backup);
@@ -64,36 +81,43 @@ export class RecoveryService {
     }
 
     payload = JSON.parse(payload);
-    if (!payload.n) {
+
+    // Support for old file formats
+    const credentials = payload.credentials ? payload.credentials : payload;
+    const key = payload.key ? payload.key : payload;
+
+    if (!credentials.n) {
       // tslint:disable-next-line:max-line-length
       throw new Error('Backup format not recognized. If you are using a Copay Beta backup and version is older than 0.10, please see: https://github.com/bitpay/copay/issues/4730#issuecomment-244522614');
     }
-    if ((payload.m !== m) || (payload.n !== n)) {
+    if ((credentials.m !== m) || (credentials.n !== n)) {
       throw new Error('The wallet configuration (m-n) does not match with values provided.');
     }
 
-    if (payload.network !== network) {
+    if (credentials.network !== network) {
       throw new Error('Incorrect network.');
     }
-    if (!(payload.xPrivKeyEncrypted) && !(payload.xPrivKey)) {
+    if (!(key.xPrivKeyEncrypted) && !(key.xPrivKey)) {
       throw new Error('The backup does not have a private key');
     }
-    let xPriv = payload.xPrivKey;
-    if (payload.xPrivKeyEncrypted) {
+    let xPriv = key.xPrivKey;
+    if (key.xPrivKeyEncrypted) {
       try {
-        xPriv = sjcl.decrypt(data.xPrivPass, payload.xPrivKeyEncrypted);
+        xPriv = sjcl.decrypt(data.xPrivPass, key.xPrivKeyEncrypted);
       } catch (ex) {
         console.log(ex);
         throw new Error('Can not decrypt private key');
       }
     }
+    const derivationStrategy = credentials.rootPath ? this.getDerivationStrategy(credentials.rootPath) :
+      (credentials.derivationStrategy ? credentials.derivationStrategy : 'BIP45');
     const credential = {
-      walletId: payload.walletId,
-      copayerId: payload.copayerId,
-      publicKeyRing: payload.publicKeyRing,
+      walletId: credentials.walletId,
+      copayerId: credentials.copayerId,
+      publicKeyRing: credentials.publicKeyRing,
       xPriv: xPriv,
-      derivationStrategy: payload.derivationStrategy || 'BIP45',
-      addressType: payload.derivationStrategy === 'BIP45' ? 'P2SH' : payload.addressType,
+      derivationStrategy,
+      addressType: derivationStrategy === 'BIP45' ? 'P2SH' : credentials.addressType,
       m: m,
       n: n,
       network: network,
@@ -190,7 +214,7 @@ export class RecoveryService {
 
     if (coin === 'btc') {
       this.bitcore = bitcoreLib;
-    } else if (coin === 'bch' || coin === 'bsv') {
+    } else if (coin === 'bch' || coin === 'bsv') {
       this.bitcore = bitcoreLibCash;
     } else {
       throw new Error('Unknown coin ' + coin);
@@ -199,10 +223,10 @@ export class RecoveryService {
     return this.buildWallet(credentials);
   }
 
-  public scanWallet(wallet: any, coin: string, inGap: number, reportFn: Function, cb: Function): any {
+  public scanWallet(wallet: any, coin: string, inGap: number, account: number, reportFn: Function, cb: Function): any {
     let utxos: Array<any>;
     // getting main addresses
-    this.getActiveAddresses(wallet, inGap, reportFn, (err, addresses) => {
+    this.getActiveAddresses(wallet, inGap, account, reportFn, (err, addresses) => {
       if (err) {
         return cb(err);
       }
@@ -215,7 +239,7 @@ export class RecoveryService {
     });
   }
 
-  private getPaths(wallet: any): string {
+  private getPaths(wallet: any, account: number): string {
     if (wallet.derivationStrategy === 'BIP45') {
       let p = _.clone(this.PATHS[wallet.derivationStrategy]);
       // adds copayer's paths
@@ -226,11 +250,20 @@ export class RecoveryService {
       return p;
     }
     if (wallet.derivationStrategy === 'BIP44') {
-      return this.PATHS[wallet.derivationStrategy][wallet.coin][wallet.network];
+      const paths = this.getPathsWithAccount(wallet, account);
+      return paths[wallet.derivationStrategy][wallet.coin][wallet.network];
     }
   }
 
-  private getHdDerivations(wallet: any): any {
+  private getPathsWithAccount(wallet, account: number) {
+    const paths = _.cloneDeep(this.PATHS);
+    paths[wallet.derivationStrategy][wallet.coin][wallet.network].forEach((path, i) => {
+      paths[wallet.derivationStrategy][wallet.coin][wallet.network][i] = path.replace(/ACCOUNT/, `${account}`);
+    });
+    return paths;
+  }
+
+  private getHdDerivations(wallet: any, account: number): any {
 
     const deriveOne = (xpriv, path, compliant): string => {
       const hdPrivateKey = this.bitcore.HDPrivateKey(xpriv);
@@ -257,7 +290,7 @@ export class RecoveryService {
 
     const xPrivKeys = _.map(wallet.copayers, 'xPriv');
     let derivations = [];
-    _.each(this.getPaths(wallet), (path) => {
+    _.each(this.getPaths(wallet, account), (path) => {
       const derivation = expand(_.map(xPrivKeys, (xpriv, i) => {
         const compliant = deriveOne(xpriv, path, true);
         const nonCompliant = deriveOne(xpriv, path, false);
@@ -284,11 +317,11 @@ export class RecoveryService {
     return derivations;
   }
 
-  private getActiveAddresses(wallet: any, inGap: number, reportFn: Function, cb: Function): any {
+  private getActiveAddresses(wallet: any, inGap: number, account: number, reportFn: Function, cb: Function): any {
     const activeAddress = [];
     let inactiveCount;
 
-    const baseDerivations = this.getHdDerivations(wallet);
+    const baseDerivations = this.getHdDerivations(wallet, account);
 
     const exploreDerivation = (i): void => {
 
@@ -322,8 +355,8 @@ export class RecoveryService {
         if (!_.isEmpty(addressData)) {
           addressData.balance = addressData.balance * 1e-8;
           console.log('#Active address:', addressData, baseDerivation, wallet.network);
-          if (wallet.network === 'livenet' && wallet.coin === 'bch') {
-            this.activeAddrCoinType = baseDerivation.path.match(/m\/44\'\/145\'/) ? 'm/44\'/145\'' : 'm/44\'/0\'';
+          if (wallet.derivationStrategy !== 'BIP45') {
+            this.activeAddrCoinType = this.getActiveAddrCoinType(wallet, path);
           }
           activeAddress.push(addressData);
           inactiveCount = 0;
@@ -338,6 +371,23 @@ export class RecoveryService {
     };
 
     exploreDerivation(0);
+  }
+
+  private getActiveAddrCoinType(wallet, path: string): string {
+    // This function avoids searching on another derivation paths when an active address has already been found in one of them
+
+    if (wallet.coin === 'btc' && wallet.network === 'livenet') {
+      return path.match(/m\/44\'\/0\'/) ? 'm/44\'/0\'' : 'm/48\'/0\'';
+    } else if (wallet.coin === 'btc' && wallet.network === 'testnet') {
+      return path.match(/m\/44\'\/1\'/) ? 'm/44\'/1\'' : 'm/48\'/1\'';
+    } else if (wallet.coin === 'bch' && wallet.network === 'livenet') {
+      return path.match(/m\/44\'\/145\'/) ? 'm/44\'/145\'' :
+        (path.match(/m\/48\'\/145\'/) ? 'm/48\'/145\'' : 'm/44\'/0\'');
+    } else if (wallet.coin === 'bch' && wallet.network === 'testnet') {
+      return path.match(/m\/44\'\/1\'/) ? 'm/44\'/1\'' : 'm/48\'/1\'';
+    } else {
+      return path;
+    }
   }
 
   private generateAddress(wallet: any, derivedItems: any, index: number): any {
@@ -563,4 +613,28 @@ export class RecoveryService {
       throw err;
     });
   }
+
+  private parsePath(path: string) {
+    return {
+      purpose: path.split('/')[1],
+      coinCode: path.split('/')[2],
+      account: path.split('/')[3]
+    };
+  }
+
+  private getDerivationStrategy(path: string): string {
+    const purpose = this.parsePath(path).purpose;
+    let derivationStrategy: string;
+
+    switch (purpose) {
+      case '45\'':
+        derivationStrategy = 'BIP45';
+        break;
+      default:
+        derivationStrategy = 'BIP44';
+        break;
+    }
+    return derivationStrategy;
+  }
+
 }
