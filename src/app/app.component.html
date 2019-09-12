@@ -70,7 +70,7 @@
             <span *ngIf="chain == 'bsv/livenet'">Satoshi livenet</span>
             <div class="chain-select">
               <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
-                <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
+                <option *ngFor="let chain of availableChains" [ngValue]="chain" [disabled]="chain == 'bsv/livenet'">{{chain}}</option>
               </select>
               <div class="chain-logo-container">
                 <img src="assets/img/icon-btc.svg" class="chain-logo" *ngIf="chain == 'btc/livenet'">
