@@ -68,6 +68,7 @@
             <span *ngIf="chain == 'bch/livenet'">Cash livenet</span>
             <span *ngIf="chain == 'bch/testnet'">Cash testnet</span>
             <span *ngIf="chain == 'bsv/livenet'">Satoshi livenet</span>
+            <span *ngIf="chain == 'eth/livenet'">Ethereum</span>
             <div class="chain-select">
               <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
                 <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
@@ -76,6 +77,7 @@
                 <img src="assets/img/icon-btc.svg" class="chain-logo" *ngIf="chain == 'btc/livenet'">
                 <img src="assets/img/icon-testnet.svg" class="chain-logo" *ngIf="chain == 'btc/testnet' || chain == 'bch/testnet'">
                 <img src="assets/img/icon-bch.svg" class="chain-logo" *ngIf="chain == 'bch/livenet'">
+                <img src="assets/img/icon-eth.svg" *ngIf="chain == 'eth/livenet'">
               </div>
             </div>
           </div>
@@ -135,6 +137,7 @@
       <span *ngIf="chain == 'btc/livenet' || chain == 'btc/testnet'">Scan BTC Wallet</span>
       <span *ngIf="chain == 'bch/livenet' || chain == 'bch/testnet'">Scan BCH Wallet</span>
       <span *ngIf="chain == 'bsv/livenet'">Scan BSV Wallet</span>
+      <span *ngIf="chain == 'eth/livenet'">Scan ETH Wallet</span>
     </button>
   </form>
 

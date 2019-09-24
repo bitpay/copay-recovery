@@ -55,7 +55,7 @@ export class AppComponent implements OnInit {
       gap: this.addressGap
     };
     this.availableOptions = [1, 2, 3, 4, 5, 6];
-    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'bch/testnet', 'bsv/livenet'];
+    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'bch/testnet', 'bsv/livenet', 'eth/livenet'];
     this.fee = 0.001;
     this.signaturesNumber = this.availableOptions[0];
     this.copayersNumber = this.availableOptions[0];
@@ -118,6 +118,10 @@ export class AppComponent implements OnInit {
       this.network = this.chain.replace('bsv/', '');
       this.coin = 'bsv';
       this.fee = 0.0001;
+    } else if (this.chain.match(/eth/)) {
+      this.network = this.chain.replace('eth/', '');
+      this.coin = 'eth';
+      this.fee = 0.00063;
     } else {
       this.network = this.chain.replace('btc/', '');
       this.coin = 'btc';
@@ -237,6 +241,9 @@ export class AppComponent implements OnInit {
         break;
       case 'bsv/livenet':
         url = 'https://bchsvexplorer.com/tx/';
+        break;
+      case 'eth/livenet':
+        url = 'https://insight.bitcore.io/#/ETH/mainnet/tx/';
         break;
       default:
         url = 'https://insight.bitcore.io/#/BTC/mainnet/tx/';
