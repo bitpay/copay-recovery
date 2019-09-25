@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "postinstall": "sed -i -e \"s/crypto: 'empty'/crypto: true/g\" node_modules/@angular/cli/models/webpack-configs/common.js; sed -i -e \"s/let/var/g\" node_modules/base-x/index.js",
+    "postinstall": "sed -i -e \"s/crypto: 'empty'/crypto: true/g\" node_modules/@angular/cli/models/webpack-configs/common.js; sed -i -e \"s/let/var/g\" node_modules/base-x/src/index.js",
     "ng": "ng",
     "start": "ng serve",
     "build": "ng build",
