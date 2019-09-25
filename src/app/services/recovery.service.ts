@@ -64,7 +64,7 @@ export class RecoveryService {
         },
         'eth': {
           'livenet': [
-            'm/44\'/60\'/ACCOUNT\'/0', 'm/44\'/60\'/ACCOUNT\'/1'
+            'm/44\'/60\'/ACCOUNT\'/0'
           ]
         }
       }

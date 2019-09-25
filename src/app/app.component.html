@@ -62,15 +62,15 @@
           </div>
 
           <div class="form-group col-sm-6 col-xs-12">
-            <label for="chain">Chain: Bitcoin</label>
-            <span *ngIf="chain == 'btc/livenet'">livenet</span>
-            <span *ngIf="chain == 'btc/testnet'">testnet</span>
-            <span *ngIf="chain == 'bch/livenet'">Cash livenet</span>
-            <span *ngIf="chain == 'bch/testnet'">Cash testnet</span>
-            <span *ngIf="chain == 'bsv/livenet'">Satoshi livenet</span>
-            <span *ngIf="chain == 'eth/livenet'">Ethereum</span>
+            <label for="chain">Chain: </label>
+            <span *ngIf="chain == 'btc/livenet'">Bitcoin livenet</span>
+            <span *ngIf="chain == 'btc/testnet'">Bitcoin testnet</span>
+            <span *ngIf="chain == 'bch/livenet'">Bitcoin Cash livenet</span>
+            <span *ngIf="chain == 'bch/testnet'">Bitcoin Cash testnet</span>
+            <span *ngIf="chain == 'bsv/livenet'">Bitcoin Satoshi livenet</span>
+            <span *ngIf="chain == 'eth/livenet'">Ethereum livenet</span>
             <div class="chain-select">
-              <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
+              <select class="form-control" id="chain" name="chain" [(ngModel)]="chain" (ngModelChange)="updateAddressGap($event)">
                 <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
               </select>
               <div class="chain-logo-container">

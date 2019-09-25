@@ -286,4 +286,7 @@ export class AppComponent implements OnInit {
     }, 150);
   }
 
+  public updateAddressGap(): void {
+    this.addressGap = this.chain === 'eth/livenet' ? 1 : 20;
+  }
 }
