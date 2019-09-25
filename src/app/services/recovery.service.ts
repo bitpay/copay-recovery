@@ -107,7 +107,15 @@ export class RecoveryService {
     if (!(key.xPrivKeyEncrypted) && !(key.xPrivKey)) {
       throw new Error('The backup does not have a private key');
     }
-    let xPriv = key.xPrivKey;
+
+    let xPriv;
+    if (coin !== 'eth') {
+      xPriv = key.xPrivKey;
+    } else {
+      const xpriv = bitcoreLib.HDPrivateKey(key.xPrivKey);
+      const path = this.bitcore.Deriver.pathFor(coin.toUpperCase(), network);
+      xPriv = xpriv.deriveChild(path).toString();
+    }
     if (key.xPrivKeyEncrypted) {
       try {
         xPriv = sjcl.decrypt(data.xPrivPass, key.xPrivKeyEncrypted);
@@ -416,10 +424,10 @@ export class RecoveryService {
     let derivedPublicKeys = [];
     let derivedPrivateKey;
 
-    _.each([].concat(derivedItems), (item) => {
+    _.each([].concat(derivedItems), (derivedItem) => {
       if (wallet.coin !== 'eth') {
 
-        const hdPrivateKey = this.bitcore.HDPrivateKey(item.key);
+        const hdPrivateKey = this.bitcore.HDPrivateKey(derivedItem.key);
 
         // private key derivation
         derivedPrivateKey = hdPrivateKey.deriveChild(index).privateKey;
@@ -427,6 +435,25 @@ export class RecoveryService {
 
         // public key derivation
         derivedPublicKeys.push(derivedPrivateKey.publicKey);
+        if (wallet.publicKeyRing && wallet.coin) {
+          let hdPublicKey;
+          const derivedItemsArray = [].concat(derivedItems);
+          const path = derivedItemsArray[0].path.split('/');
+          const isChange = parseInt(_.last(path).toString(), 10);
+          derivedPublicKeys = [];
+          wallet.publicKeyRing.forEach((item) => {
+            if (wallet.derivationStrategy === 'BIP45') {
+              // (sharedId = 2147483647 )
+              const copayerId = parseInt(_.nth(path, -2).toString(), 10);
+              hdPublicKey = new this.bitcore.HDPublicKey(item.xPubKey).deriveChild(copayerId).deriveChild(isChange).deriveChild(index);
+            } else {
+              if (wallet.derivationStrategy === 'BIP44') {
+                hdPublicKey = new this.bitcore.HDPublicKey(item.xPubKey).deriveChild(isChange).deriveChild(index);
+              }
+            }
+            derivedPublicKeys.push(hdPublicKey.publicKey);
+          });
+        }
       } else {
         // private key derivation
 
@@ -438,25 +465,6 @@ export class RecoveryService {
         derivedPublicKeys.push(derivedPrivateKey.pubKey);
       }
     });
-    if (wallet.publicKeyRing) {
-      let hdPublicKey;
-      const derivedItemsArray = [].concat(derivedItems);
-      const path = derivedItemsArray[0].path.split('/');
-      const isChange = parseInt(_.last(path).toString(), 10);
-      derivedPublicKeys = [];
-      wallet.publicKeyRing.forEach((item) => {
-        if (wallet.derivationStrategy === 'BIP45') {
-          // (sharedId = 2147483647 )
-          const copayerId = parseInt(_.nth(path, -2).toString(), 10);
-          hdPublicKey = new this.bitcore.HDPublicKey(item.xPubKey).deriveChild(copayerId).deriveChild(isChange).deriveChild(index);
-        } else {
-          if (wallet.derivationStrategy === 'BIP44') {
-            hdPublicKey = new this.bitcore.HDPublicKey(item.xPubKey).deriveChild(isChange).deriveChild(index);
-          }
-        }
-        derivedPublicKeys.push(hdPublicKey.publicKey);
-      });
-    }
 
     let address;
     if (wallet.addressType === 'P2SH') {
