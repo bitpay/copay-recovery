@@ -176,13 +176,13 @@ export class RecoveryService {
     }
 
     const credential = {
-      xPriv: xPriv,
+      xPriv,
       derivationStrategy: 'BIP44',
       addressType: n === 1 ? 'P2PKH' : 'P2SH',
       m: m,
       n: n,
-      network: network,
-      coin: coin,
+      network,
+      coin,
       from: 'mnemonic',
     };
 
@@ -382,7 +382,7 @@ export class RecoveryService {
           return callback(err);
         }
         if (!_.isEmpty(addressData)) {
-          addressData.balance = wallet.coin === 'eth' ? addressData.balance * 1e-18 : addressData.balance * 1e-8;
+          addressData.balance = wallet.coin !== 'eth' ? addressData.balance * 1e-8 : addressData.balance;
           console.log('#Active address:', addressData, baseDerivation, wallet.network);
           if (wallet.derivationStrategy !== 'BIP45') {
             this.activeAddrCoinType = this.getActiveAddrCoinType(wallet, path);
@@ -501,26 +501,29 @@ export class RecoveryService {
     const addr = address.addressObject.toString(true);
 
     this.getAddressTxos(addr, coin, network).subscribe((res) => {
-      const addressData = {
-        address: addr,
-        balance: res.balance,
-        privKeys: address.privKeys,
-        pubKeys: address.pubKeys,
-        info: address.info,
-        index: address.index,
-        isActive: res.balance > 0
-      };
+      this.getTransactionCount(addr, coin, network).subscribe(transactionCount => {
+        const addressData = {
+          address: addr,
+          balance: res.balance,
+          privKeys: address.privKeys,
+          pubKeys: address.pubKeys,
+          info: address.info,
+          index: address.index,
+          isActive: transactionCount.nonce > 0,
+          nonce: transactionCount.nonce
+        };
 
-      /* This timeout is because we must not exceed the limit of 30 requests per minute to the server.
-      If you do, you will get an HTTP 429 error */
-      setTimeout(() => {
-        if (addressData.isActive) {
-          return cb(null, addressData);
-        }
-        return cb();
-      }, 1000);
-    }, err => {
-      return cb(err);
+        /* This timeout is because we must not exceed the limit of 30 requests per minute to the server.
+        If you do, you will get an HTTP 429 error */
+        setTimeout(() => {
+          if (addressData.isActive) {
+            return cb(null, addressData);
+          }
+          return cb();
+        }, 1000);
+      }, err => {
+        return cb(err);
+      });
     });
   }
 
@@ -622,6 +625,13 @@ export class RecoveryService {
     });
   }
 
+  private getTransactionCount(addr: string, coin: string, network: string): Observable<any> {
+    const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/txs/count';
+    return this.http.get<any>(url).catch(err => {
+      throw err;
+    });
+  }
+
   public createRawTx(toAddress: string, scanResults: any, wallet: any, fee: number): any {
 
     if (wallet.coin !== 'eth') {
@@ -676,7 +686,7 @@ export class RecoveryService {
         throw new Error('Could not build tx: ' + ex);
       }
     } else {
-      const amount = parseInt((scanResults.balance * 1e18 - fee * 1e18).toFixed(0), 10);
+      const amount = parseInt((scanResults.balance - fee * 1e18).toFixed(0), 10);
 
       if (amount <= 0) {
         throw new Error('Funds are insufficient to complete the transaction');
@@ -691,9 +701,9 @@ export class RecoveryService {
         const tx = this.bitcore.Transactions.create({
           chain: wallet.coin.toUpperCase(),
           recipients: [{ address: toAddress, amount }],
-          gasPrice: parseInt((fee * 1e18).toFixed(0), 10),
+          gasPrice: parseInt((fee * 1e18).toFixed(0), 10) / 21000,
           gasLimit: 21000,
-          nonce: 0,
+          nonce: scanResults.addresses[0].nonce,
         });
         const key = {
           privKey: scanResults.addresses[0].privKeys[0]

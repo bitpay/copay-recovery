@@ -27,7 +27,6 @@ export class AppComponent implements OnInit {
   public successMessage: string;
   public errorMessage: string;
   public totalBalanceStr: string;
-  public totalBalance: number;
   public destinationAddress: string;
   public showLoadingSpinner: boolean;
   public done: boolean;
@@ -144,7 +143,7 @@ export class AppComponent implements OnInit {
       } else {
         balance = _.sumBy(activeAddresses, 'balance');
       }
-      const balStr = balance.toFixed(8) + ' ';
+      const balStr = this.wallet.coin === 'eth' ? (balance * 1e-18).toFixed(8) + ' ' : balance.toFixed(8) + ' ';
       this.reportInactive = currentGap;
       this.reportAmount = balStr + ' ' + this.wallet.coin.toUpperCase();
       this.reportAddresses = activeAddresses.length;
@@ -160,14 +159,13 @@ export class AppComponent implements OnInit {
       }
 
       this.scanResults = res;
-      console.log('## Total balance:', this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase());
+      console.log('## Total balance:', this.reportAmount);
 
       if (!this.recoveryService.stopSearching) {
         this.showMessage('Search completed', 2);
         this.showLoadingSpinner = false;
         this.beforeScan = false;
-        this.totalBalance = this.scanResults.balance.toFixed(8);
-        this.totalBalanceStr = 'Available balance: ' + this.scanResults.balance.toFixed(8) + ' ' + this.wallet.coin.toUpperCase();
+        this.totalBalanceStr = 'Available balance: ' + this.reportAmount;
         if ((this.scanResults.balance - this.fee) <= 0) {
           if (this.scanResults.balance > 0) {
             this.totalBalanceStr += '. Insufficient funds.';
@@ -194,7 +192,7 @@ export class AppComponent implements OnInit {
 
   public sendFunds(destinationAddress: string, chain: string): void {
     // tslint:disable-next-line:max-line-length
-    const confirmMessage = 'A total of ' + this.totalBalance + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + (chain.substring(0, 3)).toUpperCase();
+    const confirmMessage = 'A total of ' + this.reportAmount + ' will be send to: \n\nDestination address: ' + destinationAddress + '\nChain: ' + (chain.substring(0, 3)).toUpperCase();
     if (!confirm(confirmMessage)) {
       return;
     }
