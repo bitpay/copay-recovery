@@ -686,7 +686,9 @@ export class RecoveryService {
         throw new Error('Could not build tx: ' + ex);
       }
     } else {
-      const amount = parseInt((scanResults.balance - fee * 1e18).toFixed(0), 10);
+      let balance = scanResults.balance.toString();
+      balance = parseInt(balance.substring(0, balance.length - 1), 10);
+      const amount = parseInt((balance - fee * 1e18).toFixed(0), 10);
 
       if (amount <= 0) {
         throw new Error('Funds are insufficient to complete the transaction');
