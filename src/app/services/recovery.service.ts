@@ -5,6 +5,7 @@ import {
 import * as sjcl from 'sjcl';
 import * as bitcoreLib from 'bitcore-lib';
 import * as bitcoreLibCash from 'bitcore-lib-cash';
+import * as CWC from 'crypto-wallet-core';
 import * as Mnemonic from 'bitcore-mnemonic';
 import * as _ from 'lodash';
 import { HttpClient } from '@angular/common/http';
@@ -22,6 +23,7 @@ export class RecoveryService {
     'bch/livenet': 'https://api.bitcore.io/api/BCH/mainnet/',
     'bch/testnet': 'https://api.bitcore.io/api/BCH/testnet/',
     'bsv/livenet': 'https://bchsvexplorer.com/api/',
+    'eth/livenet': 'https://api-eth.bitcore.io/api/ETH/mainnet/',
   };
   public activeAddrCoinType = '';
   public stopSearching = false;
@@ -58,6 +60,11 @@ export class RecoveryService {
           'livenet': [
             'm/44\'/0\'/ACCOUNT\'/0', 'm/44\'/0\'/ACCOUNT\'/1',
             'm/44\'/145\'/ACCOUNT\'/0', 'm/44\'/145\'/ACCOUNT\'/1'
+          ]
+        },
+        'eth': {
+          'livenet': [
+            'm/44\'/60\'/ACCOUNT\'/0'
           ]
         }
       }
@@ -100,7 +107,15 @@ export class RecoveryService {
     if (!(key.xPrivKeyEncrypted) && !(key.xPrivKey)) {
       throw new Error('The backup does not have a private key');
     }
-    let xPriv = key.xPrivKey;
+
+    let xPriv;
+    if (coin !== 'eth') {
+      xPriv = key.xPrivKey;
+    } else {
+      const xpriv = bitcoreLib.HDPrivateKey(key.xPrivKey);
+      const path = this.bitcore.Deriver.pathFor(coin.toUpperCase(), network);
+      xPriv = xpriv.deriveChild(path).toString();
+    }
     if (key.xPrivKeyEncrypted) {
       try {
         xPriv = sjcl.decrypt(data.xPrivPass, key.xPrivKeyEncrypted);
@@ -148,22 +163,29 @@ export class RecoveryService {
     let xPriv;
 
     try {
-      xPriv = new Mnemonic(words).toHDPrivateKey(passphrase, network).toString();
+      if (coin !== 'eth') {
+        xPriv = new Mnemonic(words).toHDPrivateKey(passphrase, network).toString();
+      } else {
+        const xpriv = new Mnemonic(words).toHDPrivateKey(passphrase, network);
+        const path = this.bitcore.Deriver.pathFor(coin.toUpperCase(), network);
+        xPriv = xpriv.deriveChild(path).toString();
+      }
     } catch (ex) {
       console.log(ex);
       throw new Error('Mnemonic wallet seed is not valid.');
     }
 
     const credential = {
-      xPriv: xPriv,
+      xPriv,
       derivationStrategy: 'BIP44',
       addressType: n === 1 ? 'P2PKH' : 'P2SH',
       m: m,
       n: n,
-      network: network,
-      coin: coin,
+      network,
+      coin,
       from: 'mnemonic',
     };
+
     return credential;
   }
 
@@ -203,6 +225,15 @@ export class RecoveryService {
   }
 
   public getWallet(data: any, m: number, n: number, coin: string, network: string): any {
+    if (coin === 'btc') {
+      this.bitcore = bitcoreLib;
+    } else if (coin === 'bch' || coin === 'bsv') {
+      this.bitcore = bitcoreLibCash;
+    } else if (coin === 'eth') {
+      this.bitcore = CWC;
+    } else {
+      throw new Error('Unknown coin ' + coin);
+    }
     const credentials = _.map(data, (dataItem: any) => {
       dataItem.backup = _.trim(dataItem.backup);
       if (dataItem.backup.charAt(0) === '{') {
@@ -212,13 +243,6 @@ export class RecoveryService {
       }
     });
 
-    if (coin === 'btc') {
-      this.bitcore = bitcoreLib;
-    } else if (coin === 'bch' || coin === 'bsv') {
-      this.bitcore = bitcoreLibCash;
-    } else {
-      throw new Error('Unknown coin ' + coin);
-    }
 
     return this.buildWallet(credentials);
   }
@@ -265,10 +289,15 @@ export class RecoveryService {
 
   private getHdDerivations(wallet: any, account: number): any {
 
-    const deriveOne = (xpriv, path, compliant): string => {
-      const hdPrivateKey = this.bitcore.HDPrivateKey(xpriv);
-      const xPrivKey = compliant ? hdPrivateKey.deriveChild(path) : hdPrivateKey.deriveNonCompliantChild(path);
-      return xPrivKey;
+    const deriveOne = (xpriv, path, compliant): any => {
+      if (wallet.coin !== 'eth') {
+        const hdPrivateKey = this.bitcore.HDPrivateKey(xpriv);
+        const xPrivKey = compliant ? hdPrivateKey.deriveChild(path) : hdPrivateKey.deriveNonCompliantChild(path);
+        return xPrivKey;
+      } else {
+        const derivedPrivateKey = this.bitcore.Deriver.derivePrivateKey(wallet.coin.toUpperCase(), wallet.network, xpriv, 0, false);
+        return derivedPrivateKey.privKey;
+      }
     };
 
     const expand = (groups) => {
@@ -353,7 +382,7 @@ export class RecoveryService {
           return callback(err);
         }
         if (!_.isEmpty(addressData)) {
-          addressData.balance = addressData.balance * 1e-8;
+          addressData.balance = wallet.coin !== 'eth' ? addressData.balance * 1e-8 : addressData.balance;
           console.log('#Active address:', addressData, baseDerivation, wallet.network);
           if (wallet.derivationStrategy !== 'BIP45') {
             this.activeAddrCoinType = this.getActiveAddrCoinType(wallet, path);
@@ -393,42 +422,59 @@ export class RecoveryService {
   private generateAddress(wallet: any, derivedItems: any, index: number): any {
     const derivedPrivateKeys = [];
     let derivedPublicKeys = [];
+    let derivedPrivateKey;
 
-    _.each([].concat(derivedItems), (item) => {
-      const hdPrivateKey = this.bitcore.HDPrivateKey(item.key);
+    _.each([].concat(derivedItems), (derivedItem) => {
+      if (wallet.coin !== 'eth') {
 
-      // private key derivation
-      const derivedPrivateKey = hdPrivateKey.deriveChild(index).privateKey;
-      derivedPrivateKeys.push(derivedPrivateKey);
+        const hdPrivateKey = this.bitcore.HDPrivateKey(derivedItem.key);
 
-      // public key derivation
-      derivedPublicKeys.push(derivedPrivateKey.publicKey);
-    });
-    if (wallet.publicKeyRing) {
-      let hdPublicKey;
-      const derivedItemsArray = [].concat(derivedItems);
-      const path = derivedItemsArray[0].path.split('/');
-      const isChange = parseInt(_.last(path).toString(), 10);
-      derivedPublicKeys = [];
-      wallet.publicKeyRing.forEach((item) => {
-        if (wallet.derivationStrategy === 'BIP45') {
-          // (sharedId = 2147483647 )
-          const copayerId = parseInt(_.nth(path, -2).toString(), 10);
-          hdPublicKey = new this.bitcore.HDPublicKey(item.xPubKey).deriveChild(copayerId).deriveChild(isChange).deriveChild(index);
-        } else {
-          if (wallet.derivationStrategy === 'BIP44') {
-            hdPublicKey = new this.bitcore.HDPublicKey(item.xPubKey).deriveChild(isChange).deriveChild(index);
-          }
+        // private key derivation
+        derivedPrivateKey = hdPrivateKey.deriveChild(index).privateKey;
+        derivedPrivateKeys.push(derivedPrivateKey);
+
+        // public key derivation
+        derivedPublicKeys.push(derivedPrivateKey.publicKey);
+        if (wallet.publicKeyRing && wallet.coin) {
+          let hdPublicKey;
+          const derivedItemsArray = [].concat(derivedItems);
+          const path = derivedItemsArray[0].path.split('/');
+          const isChange = parseInt(_.last(path).toString(), 10);
+          derivedPublicKeys = [];
+          wallet.publicKeyRing.forEach((item) => {
+            if (wallet.derivationStrategy === 'BIP45') {
+              // (sharedId = 2147483647 )
+              const copayerId = parseInt(_.nth(path, -2).toString(), 10);
+              hdPublicKey = new this.bitcore.HDPublicKey(item.xPubKey).deriveChild(copayerId).deriveChild(isChange).deriveChild(index);
+            } else {
+              if (wallet.derivationStrategy === 'BIP44') {
+                hdPublicKey = new this.bitcore.HDPublicKey(item.xPubKey).deriveChild(isChange).deriveChild(index);
+              }
+            }
+            derivedPublicKeys.push(hdPublicKey.publicKey);
+          });
         }
-        derivedPublicKeys.push(hdPublicKey.publicKey);
-      });
-    }
+      } else {
+        // private key derivation
+
+        // tslint:disable-next-line:max-line-length
+        derivedPrivateKey = this.bitcore.Deriver.derivePrivateKey(wallet.coin.toUpperCase(), wallet.network, wallet.copayers[0].xPriv, index, false);
+        derivedPrivateKeys.push(derivedPrivateKey.privKey);
+
+        // public key derivation
+        derivedPublicKeys.push(derivedPrivateKey.pubKey);
+      }
+    });
 
     let address;
     if (wallet.addressType === 'P2SH') {
       address = this.bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
     } else if (wallet.addressType === 'P2PKH') {
-      address = this.bitcore.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
+      if (wallet.coin !== 'eth') {
+        address = this.bitcore.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
+      } else {
+        address = derivedPrivateKey.address;
+      }
     } else {
       throw new Error('Address type not supported');
     }
@@ -444,9 +490,41 @@ export class RecoveryService {
   private checkAddressData(address: any, coin: string, network: string, cb: Function) {
     if (coin === 'bsv') {
       this.getAddressDataBsv(address, coin, network, cb);
+    } else if (coin === 'eth') {
+      this.checkEthAddress(address, coin, network, cb);
     } else {
       this.checkAddress(address, coin, network, cb);
     }
+  }
+
+  private checkEthAddress(address: any, coin: string, network: string, cb: Function): any {
+    const addr = address.addressObject.toString(true);
+
+    this.getAddressTxos(addr, coin, network).subscribe((res) => {
+      this.getTransactionCount(addr, coin, network).subscribe(transactionCount => {
+        const addressData = {
+          address: addr,
+          balance: res.balance,
+          privKeys: address.privKeys,
+          pubKeys: address.pubKeys,
+          info: address.info,
+          index: address.index,
+          isActive: transactionCount.nonce > 0,
+          nonce: transactionCount.nonce
+        };
+
+        /* This timeout is because we must not exceed the limit of 30 requests per minute to the server.
+        If you do, you will get an HTTP 429 error */
+        setTimeout(() => {
+          if (addressData.isActive) {
+            return cb(null, addressData);
+          }
+          return cb();
+        }, 1000);
+      }, err => {
+        return cb(err);
+      });
+    });
   }
 
   private getBsvAddressFromLegacy(address: string): string {
@@ -537,6 +615,8 @@ export class RecoveryService {
     let url;
     if (coin === 'bsv') {
       url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '/utxo?noCache=1';
+    } else if (coin === 'eth') {
+      url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/balance';
     } else {
       url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?limit=999';
     }
@@ -545,57 +625,101 @@ export class RecoveryService {
     });
   }
 
+  private getTransactionCount(addr: string, coin: string, network: string): Observable<any> {
+    const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/txs/count';
+    return this.http.get<any>(url).catch(err => {
+      throw err;
+    });
+  }
+
   public createRawTx(toAddress: string, scanResults: any, wallet: any, fee: number): any {
-    if (!toAddress || !this.bitcore.Address.isValid(toAddress)) {
-      throw new Error('Please enter a valid address.');
-    }
 
-    const amount = parseInt((scanResults.balance * 1e8 - fee * 1e8).toFixed(0), 10);
-    if (amount <= 0) {
-      throw new Error('Funds are insufficient to complete the transaction');
-    }
+    if (wallet.coin !== 'eth') {
+      const amount = parseInt((scanResults.balance * 1e8 - fee * 1e8).toFixed(0), 10);
+      if (amount <= 0) {
+        throw new Error('Funds are insufficient to complete the transaction');
+      }
+      console.log('Generating a ' + wallet.coin + ' transaction');
 
-    console.log('Generating a ' + wallet.coin + ' transaction');
+      if (!toAddress || !this.bitcore.Address.isValid(toAddress)) {
+        throw new Error('Please enter a valid address.');
+      }
 
-    try {
-      const checkAddress = new this.bitcore.Address(toAddress, wallet.network);
-      console.log('Check address: ', checkAddress);
-    } catch (ex) {
-      console.log(ex);
-      throw new Error('Incorrect destination address network');
-    }
+      try {
+        const checkAddress = new this.bitcore.Address(toAddress, wallet.network);
+        console.log('Check address: ', checkAddress);
+      } catch (ex) {
+        console.log(ex);
+        throw new Error('Incorrect destination address network');
+      }
 
-    try {
-      let privKeys = [];
+      try {
+        let privKeys = [];
 
-      const tx = new this.bitcore.Transaction();
+        const tx = new this.bitcore.Transaction();
 
-      _.each(scanResults.addresses, (address: any) => {
-        if (address.utxo.length > 0) {
-          _.each(address.utxo, (u) => {
-            if (wallet.coin !== 'bsv') {
-              u.txid = u.mintTxid;
-              u.outputIndex = u.mintIndex;
-              u.satoshis = u.value;
-            }
-            if (wallet.addressType === 'P2SH') {
-              tx.from(u, address.pubKeys, wallet.m);
-            } else {
-              tx.from(u);
-            }
-            privKeys = privKeys.concat(address.privKeys.slice(0, wallet.m));
-          });
-        }
-      });
+        _.each(scanResults.addresses, (address: any) => {
+          if (address.utxo.length > 0) {
+            _.each(address.utxo, (u) => {
+              if (wallet.coin !== 'bsv') {
+                u.txid = u.mintTxid;
+                u.outputIndex = u.mintIndex;
+                u.satoshis = u.value;
+              }
+              if (wallet.addressType === 'P2SH') {
+                tx.from(u, address.pubKeys, wallet.m);
+              } else {
+                tx.from(u);
+              }
+              privKeys = privKeys.concat(address.privKeys.slice(0, wallet.m));
+            });
+          }
+        });
 
-      tx.to(toAddress, amount);
-      tx.sign(_.uniq(privKeys));
-      const rawTx = tx.serialize();
-      console.log('Raw transaction: ', rawTx);
-      return rawTx;
-    } catch (ex) {
-      console.log(ex);
-      throw new Error('Could not build tx: ' + ex);
+        tx.to(toAddress, amount);
+        tx.sign(_.uniq(privKeys));
+        const rawTx = tx.serialize();
+        console.log('Raw transaction: ', rawTx);
+        return rawTx;
+      } catch (ex) {
+        console.log(ex);
+        throw new Error('Could not build tx: ' + ex);
+      }
+    } else {
+      let balance = scanResults.balance.toString();
+      balance = parseInt(balance.substring(0, balance.length - 1), 10);
+      const amount = parseInt((balance - fee * 1e18).toFixed(0), 10);
+
+      if (amount <= 0) {
+        throw new Error('Funds are insufficient to complete the transaction');
+      }
+
+      console.log('Generating a ' + wallet.coin + ' transaction');
+      if (!toAddress || !this.bitcore.Validation.validateAddress(wallet.coin, wallet.chain, toAddress)) {
+        throw new Error('Please enter a valid address.');
+      }
+
+      try {
+        const tx = this.bitcore.Transactions.create({
+          chain: wallet.coin.toUpperCase(),
+          recipients: [{ address: toAddress, amount }],
+          gasPrice: parseInt((fee * 1e18).toFixed(0), 10) / 21000,
+          gasLimit: 21000,
+          nonce: scanResults.addresses[0].nonce,
+        });
+        const key = {
+          privKey: scanResults.addresses[0].privKeys[0]
+        };
+        const rawEthTx = this.bitcore.Transactions.sign({
+          chain: wallet.coin.toUpperCase(),
+          tx,
+          key
+        });
+        return rawEthTx;
+      } catch (ex) {
+        console.log(ex);
+        throw new Error('Could not build tx: ' + ex);
+      }
     }
   }
 

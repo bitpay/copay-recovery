@@ -62,20 +62,22 @@
           </div>
 
           <div class="form-group col-sm-6 col-xs-12">
-            <label for="chain">Chain: Bitcoin</label>
-            <span *ngIf="chain == 'btc/livenet'">livenet</span>
-            <span *ngIf="chain == 'btc/testnet'">testnet</span>
-            <span *ngIf="chain == 'bch/livenet'">Cash livenet</span>
-            <span *ngIf="chain == 'bch/testnet'">Cash testnet</span>
-            <span *ngIf="chain == 'bsv/livenet'">Satoshi livenet</span>
+            <label for="chain">Chain: </label>
+            <span *ngIf="chain == 'btc/livenet'">Bitcoin livenet</span>
+            <span *ngIf="chain == 'btc/testnet'">Bitcoin testnet</span>
+            <span *ngIf="chain == 'bch/livenet'">Bitcoin Cash livenet</span>
+            <span *ngIf="chain == 'bch/testnet'">Bitcoin Cash testnet</span>
+            <span *ngIf="chain == 'bsv/livenet'">Bitcoin Satoshi Vision livenet</span>
+            <span *ngIf="chain == 'eth/livenet'">Ethereum livenet</span>
             <div class="chain-select">
-              <select class="form-control" id="chain" name="chain" [(ngModel)]="chain">
+              <select class="form-control" id="chain" name="chain" [(ngModel)]="chain" (ngModelChange)="updateAddressGap($event)">
                 <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
               </select>
               <div class="chain-logo-container">
                 <img src="assets/img/icon-btc.svg" class="chain-logo" *ngIf="chain == 'btc/livenet'">
                 <img src="assets/img/icon-testnet.svg" class="chain-logo" *ngIf="chain == 'btc/testnet' || chain == 'bch/testnet'">
                 <img src="assets/img/icon-bch.svg" class="chain-logo" *ngIf="chain == 'bch/livenet'">
+                <img src="assets/img/icon-eth.svg" *ngIf="chain == 'eth/livenet'">
               </div>
             </div>
           </div>
@@ -135,6 +137,7 @@
       <span *ngIf="chain == 'btc/livenet' || chain == 'btc/testnet'">Scan BTC Wallet</span>
       <span *ngIf="chain == 'bch/livenet' || chain == 'bch/testnet'">Scan BCH Wallet</span>
       <span *ngIf="chain == 'bsv/livenet'">Scan BSV Wallet</span>
+      <span *ngIf="chain == 'eth/livenet'">Scan ETH Wallet</span>
     </button>
   </form>
 
