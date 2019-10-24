@@ -687,7 +687,7 @@ export class RecoveryService {
       }
     } else {
       let balance = scanResults.balance.toString();
-      balance = parseInt(balance.substring(0, balance.length - 1), 10);
+      balance = parseInt(balance.slice(0, - 1) + '0', 10);
       const amount = parseInt((balance - fee * 1e18).toFixed(0), 10);
 
       if (amount <= 0) {

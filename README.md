@@ -58,11 +58,23 @@ Run `npm start` for a dev server. Navigate to `http://localhost:4200/`. The app 
 
 ### Build
 
-Run `npm run build` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
+Run `./node_modules/.bin/ng  build --prod --aot=false --base-href "https://bitpay.github.io/copay-recovery/"` to build the project. The build artifacts will be stored in the `dist/` directory. Use the `-prod` flag for a production build.
 
 ## Publish web on Github Pages (gh-pages)
 
-Simple command to generate pages for [Copay Recovery](https://bitpay.github.io/copay-recovery/):
+First go to /copay-recovery/node_modules/@angular/cli/models/webpack-configs/production.js
+
+And remove these lines:
+```
+new webpack.optimize.UglifyJsPlugin({
+    mangle: { screw_ie8: true },
+    compress: { screw_ie8: true, warnings: buildOptions.verbose },
+    sourceMap: buildOptions.sourcemaps,
+    comments: false
+})
+```
+
+Then run this simple command to generate pages for [Copay Recovery](https://bitpay.github.io/copay-recovery/):
 
 ```
 npm run publish
