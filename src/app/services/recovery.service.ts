@@ -509,7 +509,7 @@ export class RecoveryService {
           pubKeys: address.pubKeys,
           info: address.info,
           index: address.index,
-          isActive: transactionCount.nonce > 0,
+          isActive: transactionCount.nonce > 0 || (res.balance > 0 && transactionCount.nonce === 0),
           nonce: transactionCount.nonce
         };
 
