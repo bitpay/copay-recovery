@@ -24,6 +24,8 @@ export class RecoveryService {
     'bch/testnet': 'https://api.bitcore.io/api/BCH/testnet/',
     'bsv/livenet': 'https://bchsvexplorer.com/api/',
     'eth/livenet': 'https://api-eth.bitcore.io/api/ETH/mainnet/',
+    'xrp/livenet': 'https://api-xrp.bitcore.io/api/XRP/mainnet/',
+    'xrp/testnet': 'https://api-xrp.bitcore.io/api/XRP/testnet/',
   };
   public activeAddrCoinType = '';
   public stopSearching = false;
@@ -65,6 +67,14 @@ export class RecoveryService {
         'eth': {
           'livenet': [
             'm/44\'/60\'/ACCOUNT\'/0'
+          ]
+        },
+        'xrp': {
+          'livenet': [
+            'm/44\'/144\'/ACCOUNT\'/0'
+          ],
+          'testnet': [
+            'm/44\'/144\'/ACCOUNT\'/0'
           ]
         }
       }
@@ -109,7 +119,7 @@ export class RecoveryService {
     }
 
     let xPriv;
-    if (coin !== 'eth') {
+    if (coin !== 'eth' && coin !== 'xrp') {
       xPriv = key.xPrivKey;
     } else {
       const xpriv = bitcoreLib.HDPrivateKey(key.xPrivKey);
@@ -163,7 +173,7 @@ export class RecoveryService {
     let xPriv;
 
     try {
-      if (coin !== 'eth') {
+      if (coin !== 'eth' && coin !== 'xrp') {
         xPriv = new Mnemonic(words).toHDPrivateKey(passphrase, network).toString();
       } else {
         const xpriv = new Mnemonic(words).toHDPrivateKey(passphrase, network);
@@ -229,7 +239,7 @@ export class RecoveryService {
       this.bitcore = bitcoreLib;
     } else if (coin === 'bch' || coin === 'bsv') {
       this.bitcore = bitcoreLibCash;
-    } else if (coin === 'eth') {
+    } else if (coin === 'eth' || coin === 'xrp') {
       this.bitcore = CWC;
     } else {
       throw new Error('Unknown coin ' + coin);
@@ -290,7 +300,7 @@ export class RecoveryService {
   private getHdDerivations(wallet: any, account: number): any {
 
     const deriveOne = (xpriv, path, compliant): any => {
-      if (wallet.coin !== 'eth') {
+      if (wallet.coin !== 'eth' && wallet.coin !== 'xrp') {
         const hdPrivateKey = this.bitcore.HDPrivateKey(xpriv);
         const xPrivKey = compliant ? hdPrivateKey.deriveChild(path) : hdPrivateKey.deriveNonCompliantChild(path);
         return xPrivKey;
@@ -382,7 +392,7 @@ export class RecoveryService {
           return callback(err);
         }
         if (!_.isEmpty(addressData)) {
-          addressData.balance = wallet.coin !== 'eth' ? addressData.balance * 1e-8 : addressData.balance;
+          addressData.balance = wallet.coin !== 'eth' && wallet.coin !== 'xrp' ? addressData.balance * 1e-8 : addressData.balance;
           console.log('#Active address:', addressData, baseDerivation, wallet.network);
           if (wallet.derivationStrategy !== 'BIP45') {
             this.activeAddrCoinType = this.getActiveAddrCoinType(wallet, path);
@@ -425,7 +435,7 @@ export class RecoveryService {
     let derivedPrivateKey;
 
     _.each([].concat(derivedItems), (derivedItem) => {
-      if (wallet.coin !== 'eth') {
+      if (wallet.coin !== 'eth' && wallet.coin !== 'xrp') {
 
         const hdPrivateKey = this.bitcore.HDPrivateKey(derivedItem.key);
 
@@ -470,7 +480,7 @@ export class RecoveryService {
     if (wallet.addressType === 'P2SH') {
       address = this.bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
     } else if (wallet.addressType === 'P2PKH') {
-      if (wallet.coin !== 'eth') {
+      if (wallet.coin !== 'eth' && wallet.coin !== 'xrp') {
         address = this.bitcore.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
       } else {
         address = derivedPrivateKey.address;
@@ -490,18 +500,18 @@ export class RecoveryService {
   private checkAddressData(address: any, coin: string, network: string, cb: Function) {
     if (coin === 'bsv') {
       this.getAddressDataBsv(address, coin, network, cb);
-    } else if (coin === 'eth') {
-      this.checkEthAddress(address, coin, network, cb);
+    } else if (coin === 'eth' || coin === 'xrp') {
+      this.checkSingleAddress(address, coin, network, cb);
     } else {
       this.checkAddress(address, coin, network, cb);
     }
   }
 
-  private checkEthAddress(address: any, coin: string, network: string, cb: Function): any {
+  private checkSingleAddress(address: any, coin: string, network: string, cb: Function): any {
     const addr = address.addressObject.toString(true);
-
     this.getAddressTxos(addr, coin, network).subscribe((res) => {
       this.getTransactionCount(addr, coin, network).subscribe(transactionCount => {
+        const initialNonce = coin === 'eth' ? 0 : 1;
         const addressData = {
           address: addr,
           balance: res.balance,
@@ -509,7 +519,7 @@ export class RecoveryService {
           pubKeys: address.pubKeys,
           info: address.info,
           index: address.index,
-          isActive: transactionCount.nonce > 0 || (res.balance > 0 && transactionCount.nonce === 0),
+          isActive: transactionCount.nonce > initialNonce || (res.balance > 0 && transactionCount.nonce === initialNonce),
           nonce: transactionCount.nonce
         };
 
@@ -522,7 +532,10 @@ export class RecoveryService {
           return cb();
         }, 1000);
       }, err => {
-        return cb(err);
+        if (err && err.error.data && err.error.data.error_message) {
+          console.log(err && err.error.data && err.error.data.error_message ? err.error.data.error_message : err.error.message);
+        }
+        return cb();
       });
     });
   }
@@ -615,7 +628,7 @@ export class RecoveryService {
     let url;
     if (coin === 'bsv') {
       url = this.apiURI[coin + '/' + network] + 'addr/' + addr + '/utxo?noCache=1';
-    } else if (coin === 'eth') {
+    } else if (coin === 'eth' || coin === 'xrp') {
       url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/balance';
     } else {
       url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/?limit=999';
@@ -627,14 +640,12 @@ export class RecoveryService {
 
   private getTransactionCount(addr: string, coin: string, network: string): Observable<any> {
     const url = this.apiURI[coin + '/' + network] + 'address/' + addr + '/txs/count';
-    return this.http.get<any>(url).catch(err => {
-      throw err;
-    });
+    return this.http.get<any>(url);
   }
 
   public createRawTx(toAddress: string, scanResults: any, wallet: any, fee: number): any {
 
-    if (wallet.coin !== 'eth') {
+    if (wallet.coin !== 'eth' && wallet.coin !== 'xrp') {
       const amount = parseInt((scanResults.balance * 1e8 - fee * 1e8).toFixed(0), 10);
       if (amount <= 0) {
         throw new Error('Funds are insufficient to complete the transaction');
@@ -688,7 +699,9 @@ export class RecoveryService {
     } else {
       let balance = scanResults.balance.toString();
       balance = parseInt(balance.slice(0, - 1) + '0', 10);
-      const amount = parseInt((balance - fee * 1e18).toFixed(0), 10);
+
+      const unitToSatoshi = wallet.coin === 'eth' ? 1e18 : 1e6;
+      const amount = parseInt((balance - fee * unitToSatoshi).toFixed(0), 10);
 
       if (amount <= 0) {
         throw new Error('Funds are insufficient to complete the transaction');
@@ -700,22 +713,37 @@ export class RecoveryService {
       }
 
       try {
-        const tx = this.bitcore.Transactions.create({
-          chain: wallet.coin.toUpperCase(),
-          recipients: [{ address: toAddress, amount }],
-          gasPrice: parseInt((fee * 1e18).toFixed(0), 10) / 21000,
-          gasLimit: 21000,
-          nonce: scanResults.addresses[0].nonce,
-        });
-        const key = {
-          privKey: scanResults.addresses[0].privKeys[0]
-        };
-        const rawEthTx = this.bitcore.Transactions.sign({
+        let tx, key;
+        if (wallet.coin === 'eth') {
+           tx = this.bitcore.Transactions.create({
+            chain: wallet.coin.toUpperCase(),
+            recipients: [{ address: toAddress, amount }],
+            gasPrice: parseInt((fee * 1e18).toFixed(0), 10) / 21000,
+            gasLimit: 21000,
+            nonce: scanResults.addresses[0].nonce,
+          });
+          key = {
+            privKey: scanResults.addresses[0].privKeys[0]
+          };
+        } else {
+          tx = this.bitcore.Transactions.create({
+            chain: wallet.coin.toUpperCase(),
+            recipients: [{ address: toAddress, amount }],
+            from: scanResults.addresses[0].address,
+            fee: fee * unitToSatoshi,
+            nonce: scanResults.addresses[0].nonce
+          });
+          key = {
+            privKey: scanResults.addresses[0].privKeys[0],
+            pubKey: scanResults.addresses[0].pubKeys[0],
+          };
+        }
+        const rawTx = this.bitcore.Transactions.sign({
           chain: wallet.coin.toUpperCase(),
           tx,
           key
         });
-        return rawEthTx;
+        return rawTx;
       } catch (ex) {
         console.log(ex);
         throw new Error('Could not build tx: ' + ex);

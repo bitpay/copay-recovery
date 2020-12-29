@@ -27,6 +27,7 @@ export class AppComponent implements OnInit {
   public successMessage: string;
   public errorMessage: string;
   public totalBalanceStr: string;
+  public totalBalanceLockedStr: string;
   public destinationAddress: string;
   public showLoadingSpinner: boolean;
   public done: boolean;
@@ -36,6 +37,9 @@ export class AppComponent implements OnInit {
   public reportAmount: string;
   public reportInactive: string;
   public reportAddresses: string;
+  public reportXrpLocked: string;
+  public xrpReserve: number = 20 * 1e6;
+  public showXrpLockedInfo: boolean;
 
   private wallet: any;
   private scanResults: any;
@@ -54,7 +58,7 @@ export class AppComponent implements OnInit {
       gap: this.addressGap
     };
     this.availableOptions = [1, 2, 3, 4, 5, 6];
-    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'bch/testnet', 'bsv/livenet', 'eth/livenet'];
+    this.availableChains = ['btc/livenet', 'btc/testnet', 'bch/livenet', 'bch/testnet', 'bsv/livenet', 'eth/livenet', 'xrp/livenet', 'xrp/testnet'];
     this.fee = 0.001;
     this.signaturesNumber = this.availableOptions[0];
     this.copayersNumber = this.availableOptions[0];
@@ -100,6 +104,7 @@ export class AppComponent implements OnInit {
     this.showLoadingSpinner = true;
     this.beforeScan = true;
     this.recoveryService.stopSearching = false;
+    this.showXrpLockedInfo = false;
 
     const inputs = _.map(_.range(1, this.copayersNumber + 1), (i) => {
       return {
@@ -121,6 +126,10 @@ export class AppComponent implements OnInit {
       this.network = this.chain.replace('eth/', '');
       this.coin = 'eth';
       this.fee = 0.00063;
+    } else if (this.chain.match(/xrp/)) {
+      this.network = this.chain.replace('xrp/', '');
+      this.coin = 'xrp';
+      this.fee = 0.000012;
     } else {
       this.network = this.chain.replace('btc/', '');
       this.coin = 'btc';
@@ -136,14 +145,23 @@ export class AppComponent implements OnInit {
     this.showMessage('Scanning funds...', 1);
 
     const reportFn = (currentGap, activeAddresses) => {
-      let balance;
-      if (this.coin === 'bsv') {
-        // Use OLD Insight
-        balance = _.sumBy(_.flatten(_.map(activeAddresses, 'utxo')), 'amount');
-      } else {
-        balance = _.sumBy(activeAddresses, 'balance');
+      let balance, unitToSatoshi = 1;
+
+      balance = this.coin === 'bsv' ? _.sumBy(_.flatten(_.map(activeAddresses, 'utxo')), 'amount') : _.sumBy(activeAddresses, 'balance');
+
+      if (this.coin === 'eth') {
+        unitToSatoshi = 1e-18;
+      } else if (this.coin === 'xrp') {
+        unitToSatoshi = 1e-6;
+        if (balance > this.xrpReserve) {
+          this.showXrpLockedInfo = true;
+          balance = balance - this.xrpReserve;
+          this.reportXrpLocked = this.xrpReserve * unitToSatoshi + ' ' + this.wallet.coin.toUpperCase();
+          this.totalBalanceLockedStr = 'Locked balance: ' + this.reportXrpLocked;
+        }
       }
-      const balStr = this.wallet.coin === 'eth' ? (balance * 1e-18).toFixed(8) + ' ' : balance.toFixed(8) + ' ';
+
+      const balStr = (balance * unitToSatoshi).toFixed(8) + ' ';
       this.reportInactive = currentGap;
       this.reportAmount = balStr + ' ' + this.wallet.coin.toUpperCase();
       this.reportAddresses = activeAddresses.length;
@@ -159,6 +177,11 @@ export class AppComponent implements OnInit {
       }
 
       this.scanResults = res;
+
+      if (this.coin === 'xrp') {
+        this.scanResults.balance = this.scanResults.balance - this.xrpReserve;
+      }
+
       console.log('## Total balance:', this.reportAmount);
 
       if (!this.recoveryService.stopSearching) {
@@ -243,6 +266,12 @@ export class AppComponent implements OnInit {
       case 'eth/livenet':
         url = 'https://insight.bitcore.io/#/ETH/mainnet/tx/';
         break;
+      case 'xrp/livenet':
+        url = 'https://xrpscan.com/tx/';
+        break;
+      case 'xrp/testnet':
+        url = 'https://test.bithomp.com/explorer/';
+        break;
       default:
         url = 'https://insight.bitcore.io/#/BTC/mainnet/tx/';
     }
@@ -285,6 +314,14 @@ export class AppComponent implements OnInit {
   }
 
   public updateAddressGap(): void {
-    this.addressGap = this.chain === 'eth/livenet' ? 1 : 20;
+    switch (this.chain) {
+      case 'xrp/livenet':
+      case 'xrp/testnet':
+      case 'eth/livenet':
+        this.addressGap = 1;
+        break;
+      default:
+        this.addressGap = 20;
+    }
   }
 }
