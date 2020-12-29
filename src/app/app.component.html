@@ -16,16 +16,18 @@
   <div class="loading-message">
     <h5>Please wait</h5>
     <h5>This process could take several minutes</h5>
-    <PRE *ngIf="(reportAddresses || reportAmount || reportInactive) && beforeScan">
+    <PRE *ngIf="(reportAddresses || reportAmount || reportInactive || reportXrpLocked) && beforeScan">
       <div class="labels">
         Active addresses found:
         Total funds found:
         Inactive Addresses Streak:
+        <span *ngIf="showXrpLockedInfo">Locked funds:</span>
       </div>
       <div class="values">
         {{reportAddresses}}
         {{reportAmount}}
         {{reportInactive}}
+        <span *ngIf="showXrpLockedInfo">{{reportXrpLocked}}</span>
       </div>
     </PRE>
     <div>
@@ -69,6 +71,8 @@
             <span *ngIf="chain == 'bch/testnet'">Bitcoin Cash testnet</span>
             <span *ngIf="chain == 'bsv/livenet'">Bitcoin Satoshi Vision livenet</span>
             <span *ngIf="chain == 'eth/livenet'">Ethereum livenet</span>
+            <span *ngIf="chain == 'xrp/livenet'">XRP livenet</span>
+            <span *ngIf="chain == 'xrp/testnet'">XRP testnet</span>
             <div class="chain-select">
               <select class="form-control" id="chain" name="chain" [(ngModel)]="chain" (ngModelChange)="updateAddressGap($event)">
                 <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
@@ -78,6 +82,7 @@
                 <img src="assets/img/icon-testnet.svg" class="chain-logo" *ngIf="chain == 'btc/testnet' || chain == 'bch/testnet'">
                 <img src="assets/img/icon-bch.svg" class="chain-logo" *ngIf="chain == 'bch/livenet'">
                 <img src="assets/img/icon-eth.svg" *ngIf="chain == 'eth/livenet'">
+                <img src="assets/img/icon-xrp.svg" *ngIf="chain == 'xrp/livenet' || chain == 'xrp/testnet'">
               </div>
             </div>
           </div>
@@ -138,6 +143,7 @@
       <span *ngIf="chain == 'bch/livenet' || chain == 'bch/testnet'">Scan BCH Wallet</span>
       <span *ngIf="chain == 'bsv/livenet'">Scan BSV Wallet</span>
       <span *ngIf="chain == 'eth/livenet'">Scan ETH Wallet</span>
+      <span *ngIf="chain == 'xrp/livenet' || chain == 'xrp/testnet'">Scan XRP Wallet</span>
     </button>
   </form>
 
@@ -145,6 +151,8 @@
     <div class="card">
       <div class="card-block">
         <h6 class="card-title">{{totalBalanceStr}}</h6>
+        <h6 class="card-title" *ngIf="showXrpLockedInfo">{{totalBalanceLockedStr}}</h6>
+        <small *ngIf="coin === 'xrp'">The XRP ledger requires that all wallets maintain a minimum balance of 20 XRP. This non-refundable 20 XRP will remain permanently locked in your wallet.</small>
         <div class="input-group" *ngIf="!insufficentsFunds">
           <div class="input-group-addon">Destination Address:</div>
           <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress" required>
