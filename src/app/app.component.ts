@@ -41,6 +41,7 @@ export class AppComponent implements OnInit {
   public reportXrpLocked: string;
   public xrpReserve: number = 20 * 1e6;
   public showXrpLockedInfo: boolean;
+  public unitToSatoshi = 1;
 
   private wallet: any;
   private scanResults: any;
@@ -150,23 +151,22 @@ export class AppComponent implements OnInit {
     this.showMessage('Scanning funds...', 1);
 
     const reportFn = (currentGap, activeAddresses) => {
-      let balance, unitToSatoshi = 1;
-
+      let balance;
       balance = this.coin === 'bsv' ? _.sumBy(_.flatten(_.map(activeAddresses, 'utxo')), 'amount') : _.sumBy(activeAddresses, 'balance');
 
       if (this.coin === 'eth') {
-        unitToSatoshi = 1e-18;
+        this.unitToSatoshi = 1e-18;
       } else if (this.coin === 'xrp') {
-        unitToSatoshi = 1e-6;
+        this.unitToSatoshi = 1e-6;
         if (balance > this.xrpReserve) {
           this.showXrpLockedInfo = true;
           balance = balance - this.xrpReserve;
-          this.reportXrpLocked = this.xrpReserve * unitToSatoshi + ' ' + this.wallet.coin.toUpperCase();
+          this.reportXrpLocked = this.xrpReserve * this.unitToSatoshi + ' ' + this.wallet.coin.toUpperCase();
           this.totalBalanceLockedStr = 'Locked balance: ' + this.reportXrpLocked;
         }
       }
 
-      const balStr = (balance * unitToSatoshi).toFixed(8) + ' ';
+      const balStr = (balance * this.unitToSatoshi).toFixed(8) + ' ';
       this.reportInactive = currentGap;
       this.reportAmount = balStr + ' ' + this.wallet.coin.toUpperCase();
       this.reportAddresses = activeAddresses.length;
@@ -194,7 +194,7 @@ export class AppComponent implements OnInit {
         this.showLoadingSpinner = false;
         this.beforeScan = false;
         this.totalBalanceStr = 'Available balance: ' + this.reportAmount;
-        if ((this.scanResults.balance - this.fee) <= 0) {
+        if ((this.scanResults.balance - this.fee * this.unitToSatoshi) <= 0) {
           if (this.scanResults.balance > 0) {
             this.totalBalanceStr += '. Insufficient funds.';
           }
@@ -238,11 +238,11 @@ export class AppComponent implements OnInit {
 
     this.recoveryService.txBroadcast(rawTx, this.coin, this.network).subscribe((response: any) => {
       this.txid = this.coin === 'bsv' ? response.data.transaction_hash : response.txid;
-      const message = (this.scanResults.balance - this.fee).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: '
+      const message = (this.scanResults.balance - this.fee * this.unitToSatoshi).toFixed(8) + ' ' + this.wallet.coin.toUpperCase() + ' sent to address: '
         + destinationAddress + '. Transaction ID:' + this.txid;
       this.showMessage(message, 2);
       this.broadcasted = true;
-      console.log('Transaction complete. ' + (this.scanResults.balance - this.fee) + ' TX sent to address: ' + destinationAddress);
+      console.log('Transaction complete. ' + (this.scanResults.balance - this.fee * this.unitToSatoshi) + ' TX sent to address: ' + destinationAddress);
       console.log('Transaction id: ', this.txid);
     }, () => {
       this.showMessage('Could not broadcast transaction. Please, try later. Raw Tx:' + rawTx, 3);
