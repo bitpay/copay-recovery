@@ -15,6 +15,7 @@ export class AppComponent implements OnInit {
   public signaturesNumber: number; // m
   public copayersNumber: number; // n
   public chain: string;
+  public disableGapChange: boolean;
   public network: string;
   public coin: string;
   public addressGap: number;
@@ -50,6 +51,7 @@ export class AppComponent implements OnInit {
     private recoveryService: RecoveryService
   ) {
     this.addressGap = 20;
+    this.disableGapChange = false;
     this.account = 0;
     this.data = {
       backUp: [],
@@ -105,6 +107,9 @@ export class AppComponent implements OnInit {
     this.beforeScan = true;
     this.recoveryService.stopSearching = false;
     this.showXrpLockedInfo = false;
+    this.reportInactive = '0';
+    this.reportAddresses = '0';
+    this.reportXrpLocked = null;
 
     const inputs = _.map(_.range(1, this.copayersNumber + 1), (i) => {
       return {
@@ -135,7 +140,7 @@ export class AppComponent implements OnInit {
       this.coin = 'btc';
       this.fee = 0.001;
     }
-
+    this.reportAmount = '0 ' + this.coin.toLocaleUpperCase();
     try {
       this.wallet = this.recoveryService.getWallet(inputs, this.signaturesNumber, this.copayersNumber, this.coin, this.network);
     } catch (ex) {
@@ -314,11 +319,13 @@ export class AppComponent implements OnInit {
   }
 
   public updateAddressGap(): void {
+    this.disableGapChange = false;
     switch (this.chain) {
       case 'xrp/livenet':
       case 'xrp/testnet':
       case 'eth/livenet':
         this.addressGap = 1;
+        this.disableGapChange = true;
         break;
       default:
         this.addressGap = 20;
