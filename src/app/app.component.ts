@@ -17,6 +17,7 @@ export class AppComponent implements OnInit {
   public chain: string;
   public disableGapChange: boolean;
   public network: string;
+  public isSegwit: boolean;
   public coin: string;
   public addressGap: number;
   public account: number;
@@ -73,6 +74,7 @@ export class AppComponent implements OnInit {
     this.broadcasted = false;
     this.insufficentsFunds = false;
     this.termsAccepted = false;
+    this.isSegwit = true;
   }
 
   ngOnInit() {
@@ -143,7 +145,7 @@ export class AppComponent implements OnInit {
     }
     this.reportAmount = '0 ' + this.coin.toLocaleUpperCase();
     try {
-      this.wallet = this.recoveryService.getWallet(inputs, this.signaturesNumber, this.copayersNumber, this.coin, this.network);
+      this.wallet = this.recoveryService.getWallet(inputs, this.signaturesNumber, this.copayersNumber, this.coin, this.network, this.isSegwit);
     } catch (ex) {
       this.showLoadingSpinner = false;
       return this.showMessage(ex.message, 3);
@@ -329,6 +331,18 @@ export class AppComponent implements OnInit {
         break;
       default:
         this.addressGap = 20;
+    }
+  }
+
+  public updateIsSegwit(): void {
+    this.disableGapChange = false;
+    switch (this.chain) {
+      case 'btc/livenet':
+      case 'btc/testnet':
+        this.isSegwit = true;
+        break;
+      default:
+        this.isSegwit = false;
     }
   }
 }

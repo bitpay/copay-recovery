@@ -74,7 +74,7 @@
             <span *ngIf="chain == 'xrp/livenet'">XRP livenet</span>
             <span *ngIf="chain == 'xrp/testnet'">XRP testnet</span>
             <div class="chain-select">
-              <select class="form-control" id="chain" name="chain" [(ngModel)]="chain" (ngModelChange)="updateAddressGap($event)">
+              <select class="form-control" id="chain" name="chain" [(ngModel)]="chain" (ngModelChange)="updateAddressGap($event); updateIsSegwit()">
                 <option *ngFor="let chain of availableChains" [ngValue]="chain">{{chain}}</option>
               </select>
               <div class="chain-logo-container">
@@ -97,6 +97,13 @@
           </div>
           <div class="col-sm-6 offset-sm-6 col-xs-12">
             <small>*Usually does not need to be changed</small>
+          </div>
+
+          <div *ngIf="chain == 'btc/livenet' || chain == 'btc/testnet'" class="form-group col-sm-3 col-xs-12">
+            <label>
+              <input type="checkbox" [(ngModel)]="isSegwit" name="isSegwit">
+                Segwit wallet
+            </label>
           </div>
         </div>
       </div>

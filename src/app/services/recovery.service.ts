@@ -163,7 +163,7 @@ export class RecoveryService {
     return null;
   }
 
-  private fromMnemonic(data: any, m: number, n: number, coin: string, network: string): any {
+  private fromMnemonic(data: any, m: number, n: number, coin: string, network: string, isSegwit: boolean): any {
     if (!data.backup) {
       return null;
     }
@@ -185,10 +185,23 @@ export class RecoveryService {
       throw new Error('Mnemonic wallet seed is not valid.');
     }
 
+    let addressType;
+
+    switch (n) {
+      case 1:
+        if (isSegwit) addressType = 'P2WPKH';
+        else addressType = 'P2PKH';
+        break;
+      default:
+        if (isSegwit) addressType = 'P2WSH';
+        else addressType = 'P2SH';
+        break;
+    }
+
     const credential = {
       xPriv,
       derivationStrategy: 'BIP44',
-      addressType: n === 1 ? 'P2PKH' : 'P2SH',
+      addressType,
       m: m,
       n: n,
       network,
@@ -234,7 +247,7 @@ export class RecoveryService {
     return result;
   }
 
-  public getWallet(data: any, m: number, n: number, coin: string, network: string): any {
+  public getWallet(data: any, m: number, n: number, coin: string, network: string, isSegwit: boolean): any {
     if (coin === 'btc') {
       this.bitcore = bitcoreLib;
     } else if (coin === 'bch' || coin === 'bsv') {
@@ -249,7 +262,7 @@ export class RecoveryService {
       if (dataItem.backup.charAt(0) === '{') {
         return this.fromBackup(dataItem, m, n, coin, network);
       } else {
-        return this.fromMnemonic(dataItem, m, n, coin, network);
+        return this.fromMnemonic(dataItem, m, n, coin, network, isSegwit);
       }
     });
 
@@ -477,17 +490,34 @@ export class RecoveryService {
     });
 
     let address;
-    if (wallet.addressType === 'P2SH') {
-      address = this.bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
-    } else if (wallet.addressType === 'P2PKH') {
-      if (wallet.coin !== 'eth' && wallet.coin !== 'xrp') {
-        address = this.bitcore.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
-      } else {
-        address = derivedPrivateKey.address;
-      }
-    } else {
-      throw new Error('Address type not supported');
+    switch (wallet.addressType) {
+      case 'P2WSH':
+        const nestedWitness = false;
+        address = this.bitcore.Address.createMultisig(
+          derivedPublicKeys,
+          wallet.m,
+          wallet.m, wallet.network,
+          nestedWitness,
+          'witnessscripthash'
+        );
+        break;
+      case 'P2SH':
+        address = this.bitcore.Address.createMultisig(derivedPublicKeys, wallet.m, wallet.network);
+        break;
+      case 'P2WPKH':
+        address = this.bitcore.Address.fromPublicKey(derivedPublicKeys[0], wallet.network, 'witnesspubkeyhash');
+        break;
+      case 'P2PKH':
+        if (wallet.coin !== 'eth' && wallet.coin !== 'xrp') {
+          address = this.bitcore.Address.fromPublicKey(derivedPublicKeys[0], wallet.network);
+        } else {
+          address = derivedPrivateKey.address;
+        }
+        break;
+      default: 
+        throw new Error('Address type not supported');
     }
+
     return {
       addressObject: address,
       pubKeys: derivedPublicKeys,
