@@ -35,6 +35,8 @@ export class AppComponent implements OnInit {
   public done: boolean;
   public broadcasted: boolean;
   public insufficentsFunds: boolean;
+  public gasLimit = 21000;
+  public gasPrice = 30;
 
   public reportAmount: string;
   public reportInactive: string;
@@ -230,9 +232,10 @@ export class AppComponent implements OnInit {
     let rawTx;
 
     this.showLoadingSpinner = true;
+    const fee = this.coin == 'eth' ? this.gasPrice : this.fee;
 
     try {
-      rawTx = this.recoveryService.createRawTx(destinationAddress, this.scanResults, this.wallet, this.fee);
+      rawTx = this.recoveryService.createRawTx(destinationAddress, this.scanResults, this.wallet, fee);
     } catch (ex) {
       return this.showMessage(ex.message, 3);
     }
