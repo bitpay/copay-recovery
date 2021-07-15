@@ -160,9 +160,24 @@
         <h6 class="card-title">{{totalBalanceStr}}</h6>
         <h6 class="card-title" *ngIf="showXrpLockedInfo">{{totalBalanceLockedStr}}</h6>
         <small *ngIf="coin === 'xrp'">The XRP ledger requires that all wallets maintain a minimum balance of 20 XRP. This non-refundable 20 XRP will remain permanently locked in your wallet.</small>
-        <div class="input-group" *ngIf="!insufficentsFunds">
-          <div class="input-group-addon">Destination Address:</div>
-          <input type="text" class="form-control" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress" required>
+        <div class="row" *ngIf="!insufficentsFunds">
+          <div class="col-sm-4 col-md-2">Destination Address:</div>
+          <input type="text" class="form-control col-sm-8 col-md-10" id="destinationAddress" name="destinationAddress" [(ngModel)]="destinationAddress" required>
+        </div>
+        <br>
+        <div class="row" *ngIf="!insufficentsFunds && coin != 'eth'">
+          <div class="col-sm-4 col-md-2">Fee:</div>
+          <input type="number" class="form-control col-sm-8 col-md-10" id="fee" name="fee" [(ngModel)]="fee" required>
+          <small *ngIf="coin === 'eth'">The XRP ledger requires that all wallets maintain a minimum balance of 20 XRP. This non-refundable 20 XRP will remain permanently locked in your wallet.</small>
+        </div>
+        <div class="row" *ngIf="!insufficentsFunds && coin == 'eth'">
+          <div class="col-sm-4 col-md-2">Gas Price (Gwei):</div>
+          <input type="number" class="form-control col-sm-8 col-md-10" id="gasPrice" name="gasPrice" [(ngModel)]="gasPrice" required>
+        </div>
+        <br>
+        <div class="row" *ngIf="!insufficentsFunds && coin == 'eth'">
+          <div class="col-sm-4 col-md-2">Gas Limit:</div>
+          <input type="number" class="form-control col-sm-8 col-md-10" id="gasLimit" name="gasLimit" [(ngModel)]="gasLimit" [disabled]="true" required>
         </div>
       </div>
     </div>

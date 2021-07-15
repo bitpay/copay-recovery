@@ -729,10 +729,16 @@ export class RecoveryService {
     } else {
       let balance = scanResults.balance.toString();
       balance = parseInt(balance.slice(0, - 1) + '0', 10);
-
-      const unitToSatoshi = wallet.coin === 'eth' ? 1e18 : 1e6;
-      const amount = parseInt((balance - fee * unitToSatoshi).toFixed(0), 10);
-
+      let gasPrice, gasLimit, amount, unitToSatoshi;
+      
+      if(wallet.coin === 'eth') {
+        gasLimit = 21000;
+        gasPrice = fee * 1e9;  // 1e9 (Gwei)
+        amount = parseInt((balance - gasPrice * gasLimit).toFixed(0), 10);
+      } else {
+        unitToSatoshi = 1e6;
+        amount = parseInt((balance - fee * unitToSatoshi).toFixed(0), 10);
+      }
       if (amount <= 0) {
         throw new Error('Funds are insufficient to complete the transaction');
       }
@@ -748,8 +754,8 @@ export class RecoveryService {
            tx = this.bitcore.Transactions.create({
             chain: wallet.coin.toUpperCase(),
             recipients: [{ address: toAddress, amount }],
-            gasPrice: parseInt((fee * 1e18).toFixed(0), 10) / 21000,
-            gasLimit: 21000,
+            gasPrice,
+            gasLimit,
             nonce: scanResults.addresses[0].nonce,
           });
           key = {
